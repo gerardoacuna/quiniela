@@ -55,6 +55,3 @@ supabase/.temp/
 /test-results/
 /playwright-report/
 /playwright/.cache/
-
-# Vitest
-coverage/
