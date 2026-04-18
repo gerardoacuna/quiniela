@@ -39,3 +39,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Supabase local stack
+.supabase/
+supabase/.temp/
+
+# Brainstorm artifacts
+.superpowers/
+
+# Env
+.env.local
+.env*.local
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Vitest
+coverage/
