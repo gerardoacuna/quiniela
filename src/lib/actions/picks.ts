@@ -52,12 +52,16 @@ export async function submitStagePickCore(
     .eq('stages.edition_id', stage.edition_id);
   if (exErr) return { ok: false, error: exErr.message };
 
-  const normalized: ExistingPick[] = (existing ?? []).map((p: any) => ({
-    stage_id: p.stage_id,
-    rider_id: p.rider_id,
-    stage_status: p.stages.status,
-    stage_number: p.stages.number,
-  }));
+  type ExistingRow = { stage_id: string; rider_id: string; stages: { edition_id: string; number: number; status: string } };
+  const normalized: ExistingPick[] = (existing ?? []).map((p) => {
+    const row = p as unknown as ExistingRow;
+    return {
+      stage_id: row.stage_id,
+      rider_id: row.rider_id,
+      stage_status: row.stages.status as ExistingPick['stage_status'],
+      stage_number: row.stages.number,
+    };
+  });
 
   const reuseCheck = validateNoReuse(normalized, input.stageId, input.riderId);
   if (!reuseCheck.ok) {

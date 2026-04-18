@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { submitStagePickCore } from '@/lib/actions/picks';
 import { createTestUser, userClient, setStageState } from './helpers';
 
-const EDITION = '00000000-0000-0000-0000-000000000001';
 const STAGE_1 = '10000000-0000-0000-0000-000000000001';  // locked (past start_time, published) per seed
 const STAGE_9 = '10000000-0000-0000-0000-000000000002';  // future, double_points per seed
 const STAGE_21 = '10000000-0000-0000-0000-000000000003'; // future per seed
