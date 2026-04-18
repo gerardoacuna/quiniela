@@ -1,8 +1,7 @@
-export default function HomePage() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>Quiniela Giro</h1>
-      <p>Scaffold OK. Player UI lands in Plan B.</p>
-    </main>
-  );
+import { redirect } from 'next/navigation';
+import { getServerUser } from '@/lib/auth/require-user';
+
+export default async function RootPage() {
+  const user = await getServerUser();
+  redirect(user ? '/home' : '/sign-in');
 }
