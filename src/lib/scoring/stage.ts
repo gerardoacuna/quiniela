@@ -1,6 +1,6 @@
 export const STAGE_POINT_TABLE: readonly number[] = [25, 15, 10, 8, 6, 5, 4, 3, 2, 1] as const;
 
-export type StageStatusForScoring = 'upcoming' | 'locked' | 'results_draft' | 'published' | 'cancelled' | 'draft';
+export type StageStatusForScoring = 'upcoming' | 'locked' | 'results_draft' | 'published' | 'cancelled';
 
 export interface StageMeta {
   double_points: boolean;

@@ -7,7 +7,8 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
--- Helper: has the first stage of the given edition already locked?
+-- Helper: has Stage 1 of the given edition reached its start_time?
+-- GC and jersey picks are editable until this moment (wall-clock based, not status-based).
 create or replace function public.edition_started(edition_id uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (

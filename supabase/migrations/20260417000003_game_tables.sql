@@ -53,11 +53,12 @@ create table public.final_classifications (
   )
 );
 
--- Fix: invites.created_by is NOT NULL so on delete set null would conflict.
--- Using on delete cascade instead: if admin profile is deleted, their invites are moot.
+-- invites.created_by is nullable with on delete set null to preserve audit trail.
+-- If an admin profile is hard-deleted, their invite rows survive with created_by = NULL,
+-- which is a recoverable audit gap; cascading would lose "who invited whom" forever.
 create table public.invites (
   code        text primary key,
-  created_by  uuid not null references public.profiles(id) on delete cascade,
+  created_by  uuid references public.profiles(id) on delete set null,
   email       text not null,
   used_at     timestamptz,
   expires_at  timestamptz not null,

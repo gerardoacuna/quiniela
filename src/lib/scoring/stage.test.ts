@@ -33,7 +33,7 @@ describe('stagePoints', () => {
   });
 
   it('returns 0 when stage is not published', () => {
-    expect(stagePoints({ rider_id: 'r1' }, { double_points: false, status: 'draft' as const }, results)).toBe(0);
+    expect(stagePoints({ rider_id: 'r1' }, { double_points: false, status: 'results_draft' as const }, results)).toBe(0);
     expect(stagePoints({ rider_id: 'r1' }, { double_points: false, status: 'cancelled' as const }, results)).toBe(0);
   });
 
