@@ -1,10 +1,10 @@
 export interface GcPick {
-  position: 1 | 2 | 3;
+  position: number;
   rider_id: string;
 }
 
 export interface GcActual {
-  position: 1 | 2 | 3;
+  position: number;
   rider_id: string;
 }
 
