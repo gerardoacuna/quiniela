@@ -29,9 +29,7 @@ export function GcPickForm({
     const usedIds = new Set(otherSlots.map((s) => sel[s]).filter((v): v is string => !!v));
     return riders.map((r) => ({
       ...r,
-      // Reuse the existing "usedOnStageNumber" marker by piggybacking a sentinel (99 = another GC slot).
-      // Display the badge via a separate data source if you want nicer text; for MVP this is fine.
-      usedOnStageNumber: usedIds.has(r.id) ? 99 : undefined,
+      disabledReason: usedIds.has(r.id) ? 'Another slot' : undefined,
     }));
   }
 

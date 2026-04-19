@@ -105,28 +105,36 @@ d('RLS denials', () => {
   });
 
   it('user A cannot write a stage_pick with user_id = user B', async () => {
+    const admin = createAdminClient();
+
+    // Capture B's current pick count on Stage 9 (B already has 1 legitimate pick from the earlier test).
+    const { data: before } = await admin
+      .from('stage_picks')
+      .select('id')
+      .eq('user_id', userB.userId)
+      .eq('stage_id', STAGE_9);
+    const beforeCount = before?.length ?? 0;
+
     const cA = await userClient(userA.email, userA.password);
-    // Clear any prior pick for A on Stage 9 first.
-    await cA.from('stage_picks').delete().eq('user_id', userA.userId).eq('stage_id', STAGE_9);
     const { error } = await cA.from('stage_picks').insert({
       user_id: userB.userId,
       stage_id: STAGE_9,
       rider_id: RIDER_POG,
     });
-    // RLS may return an error OR silently drop the row (0 rows inserted).
-    // Check both: either error is set, or no row was written for userB on Stage 9 (beyond the pick B already submitted).
-    if (error) {
-      expect(error).not.toBeNull();
-    } else {
-      // Verify via admin that no spurious row was inserted with user_id = userA acting as userB
-      const admin = createAdminClient();
-      const { data: rows } = await admin
-        .from('stage_picks')
-        .select('id')
-        .eq('user_id', userA.userId)
-        .eq('stage_id', STAGE_9);
-      // A should have no pick on Stage 9 (they were prevented from writing B's row)
-      expect(rows).toEqual([]);
+
+    // RLS either returns an error OR silently drops the row. Either way, B's pick count must not increase.
+    const { data: after } = await admin
+      .from('stage_picks')
+      .select('id')
+      .eq('user_id', userB.userId)
+      .eq('stage_id', STAGE_9);
+    const afterCount = after?.length ?? 0;
+
+    // Assertion: the spoofed insert had no effect on B's rows.
+    expect(afterCount).toBe(beforeCount);
+    // Secondary: if the DB returned an error, that's even better.
+    if (!error) {
+      // Fall-through is allowed; the real check is the row count above.
     }
   });
 });

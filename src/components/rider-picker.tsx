@@ -10,7 +10,10 @@ export interface PickerRider {
   team: string | null;
   bib: number | null;
   status: 'active' | 'dnf' | 'dns';
+  /** If set, shows "Stage N" and marks unpickable. */
   usedOnStageNumber?: number;
+  /** Custom reason to show instead of "Stage N" (e.g. "Another slot"). Implies unpickable. */
+  disabledReason?: string;
 }
 
 export function RiderPicker({
@@ -44,7 +47,7 @@ export function RiderPicker({
         {filtered.map((r) => {
           const disabled =
             (disableInactive && r.status !== 'active') ||
-            (disableUsed && r.usedOnStageNumber !== undefined && r.id !== selectedId);
+            (disableUsed && (r.usedOnStageNumber !== undefined || r.disabledReason !== undefined) && r.id !== selectedId);
           const selected = r.id === selectedId;
           return (
             <li
@@ -62,7 +65,10 @@ export function RiderPicker({
               </div>
               <div className="text-xs">
                 {r.status !== 'active' && <Badge variant="destructive" className="mr-1">{r.status.toUpperCase()}</Badge>}
-                {r.usedOnStageNumber !== undefined && r.id !== selectedId && (
+                {r.id !== selectedId && r.disabledReason !== undefined && (
+                  <Badge variant="secondary">{r.disabledReason}</Badge>
+                )}
+                {r.id !== selectedId && r.disabledReason === undefined && r.usedOnStageNumber !== undefined && (
                   <Badge variant="secondary">Stage {r.usedOnStageNumber}</Badge>
                 )}
                 {selected && <Badge>Selected</Badge>}

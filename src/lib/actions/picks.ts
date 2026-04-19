@@ -130,6 +130,7 @@ export async function submitGcPicksCore(
   if (!riders || riders.length !== 3) return { ok: false, error: 'rider_not_found' };
   for (const r of riders) {
     if (r.edition_id !== input.editionId) return { ok: false, error: 'rider_wrong_edition' };
+    if (r.status !== 'active') return { ok: false, error: 'rider_not_active' };
   }
 
   const rows = [
@@ -184,12 +185,13 @@ export async function submitJerseyPickCore(
 
   const { data: rider, error: rErr } = await supabase
     .from('riders')
-    .select('id, edition_id')
+    .select('id, edition_id, status')
     .eq('id', input.riderId)
     .maybeSingle();
   if (rErr) return { ok: false, error: rErr.message };
   if (!rider) return { ok: false, error: 'rider_not_found' };
   if (rider.edition_id !== input.editionId) return { ok: false, error: 'rider_wrong_edition' };
+  if (rider.status !== 'active') return { ok: false, error: 'rider_not_active' };
 
   const { error } = await supabase
     .from('points_jersey_picks')

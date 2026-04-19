@@ -36,7 +36,7 @@ export async function requireProfile(): Promise<{ user: NonNullable<Awaited<Retu
 }
 
 export async function requireAdmin() {
-  const { profile } = await requireProfile()
+  const { user, profile } = await requireProfile()
   if (profile.role !== 'admin') redirect('/home')
-  return profile
+  return { user, profile }
 }
