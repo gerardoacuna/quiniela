@@ -249,6 +249,60 @@ d('scrapeAndPersist integration', () => {
     expect(sent2.length).toBeGreaterThanOrEqual(1);
   });
 
+  it('writes scrape_error and skips stage when resolved positions have gaps', async () => {
+    const admin = createAdminClient();
+
+    // Fixture top 3: 1=mads-pedersen, 2=wout-van-aert, 3=orluis-aular.
+    // Insert only positions 2 and 3 → resolved set is [2,3] which isn't
+    // contiguous from 1, so scrape must refuse to write a gappy draft.
+    await admin.from('riders').insert([
+      {
+        edition_id: EDITION_ID,
+        pcs_slug: 'wout-van-aert',
+        name: 'Wout van Aert',
+        status: 'active',
+      },
+      {
+        edition_id: EDITION_ID,
+        pcs_slug: 'orluis-aular',
+        name: 'Orluis Aular',
+        status: 'active',
+      },
+    ]);
+
+    await setStageState(STAGE_1_ID, {
+      start_time: '2026-05-09T12:00:00Z',
+      status: 'upcoming',
+    });
+
+    const { count: before } = await admin
+      .from('scrape_errors')
+      .select('id', { count: 'exact', head: true });
+
+    const res = await scrapeAndPersist({
+      fetcher: fakeFetcher,
+      now: () => new Date('2026-05-09T18:00:00Z'),
+      raceOverride: { slug: 'giro-d-italia', year: 2025 },
+    });
+
+    expect(res.ok).toBe(false);
+    const unresolved = res.targets.find((t) => t.target === 'stage-1');
+    expect(unresolved?.message).toBe('unresolved_riders');
+
+    // scrape_errors has a new row, and NO draft stage_results exist for Stage 1.
+    const { count: after } = await admin
+      .from('scrape_errors')
+      .select('id', { count: 'exact', head: true });
+    expect(after).toBeGreaterThan(before ?? 0);
+
+    const { data: drafts } = await admin
+      .from('stage_results')
+      .select('position')
+      .eq('stage_id', STAGE_1_ID)
+      .eq('status', 'draft');
+    expect(drafts ?? []).toEqual([]);
+  });
+
   it('parse error writes to scrape_errors and does not crash', async () => {
     const admin = createAdminClient();
 

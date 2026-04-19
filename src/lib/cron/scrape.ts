@@ -208,6 +208,24 @@ export async function scrapeAndPersist(opts: ScrapeOptions = {}): Promise<Scrape
         continue;
       }
 
+      // Require positions to be contiguous from 1. publishStageResults enforces
+      // the same rule at publish time, so writing a gappy draft would just block
+      // the admin later with a cryptic error. Surface the unresolved slugs now.
+      const sortedPositions = resultRows.map((r) => r.position).sort((a, b) => a - b);
+      const contiguous = sortedPositions.every((p, i) => p === i + 1);
+      if (!contiguous) {
+        const unresolved = top10
+          .filter((e) => !slugToId.has(e.rider_slug))
+          .map((e) => `pos${e.position}:${e.rider_slug}`)
+          .join(',');
+        await supabase.from('scrape_errors').insert({
+          target: stageTarget,
+          error: `unresolved_riders:${unresolved}`,
+        });
+        targets.push({ target: stageTarget, status: 'error', message: 'unresolved_riders' });
+        continue;
+      }
+
       // Delete existing draft results then insert fresh
       await supabase
         .from('stage_results')
