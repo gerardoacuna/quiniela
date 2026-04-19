@@ -1,5 +1,6 @@
 'use client';
 import { useState, useTransition, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { upsertRidersFromStartlist, setRiderStatus } from '@/lib/actions/admin-rider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ export function RidersTable({
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -43,7 +45,12 @@ export function RidersTable({
             setStatus('fetching');
             startTransition(async () => {
               const r = await upsertRidersFromStartlist({ editionId, raceSlug, year });
-              setStatus(r.ok ? `Upserted ${r.data.count} riders. Refresh the page to see them.` : r.error);
+              if (r.ok) {
+                setStatus(`Upserted ${r.data.count} riders.`);
+                router.refresh();
+              } else {
+                setStatus(r.error);
+              }
             });
           }}
         >{pending ? 'Fetching\u2026' : 'Refresh from PCS startlist'}</Button>
@@ -74,7 +81,8 @@ export function RidersTable({
                     const newStatus = e.target.value as 'active' | 'dnf' | 'dns';
                     startTransition(async () => {
                       const res = await setRiderStatus(r.id, newStatus);
-                      if (!res.ok) setStatus(res.error);
+                      if (res.ok) router.refresh();
+                      else setStatus(res.error);
                     });
                   }}
                   className="border rounded px-1 py-0.5 text-xs"
