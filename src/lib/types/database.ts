@@ -48,6 +48,30 @@ export type Database = {
           },
         ]
       }
+      cron_runs: {
+        Row: {
+          consecutive_failures: number
+          job_name: string
+          last_error: string | null
+          last_started_at: string | null
+          last_succeeded_at: string | null
+        }
+        Insert: {
+          consecutive_failures?: number
+          job_name: string
+          last_error?: string | null
+          last_started_at?: string | null
+          last_succeeded_at?: string | null
+        }
+        Update: {
+          consecutive_failures?: number
+          job_name?: string
+          last_error?: string | null
+          last_started_at?: string | null
+          last_succeeded_at?: string | null
+        }
+        Relationships: []
+      }
       editions: {
         Row: {
           created_at: string
