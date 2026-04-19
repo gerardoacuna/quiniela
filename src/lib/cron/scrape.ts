@@ -62,11 +62,11 @@ async function bumpFailures(
     .from('cron_runs')
     .select('consecutive_failures')
     .eq('job_name', jobName)
-    .single();
-  const current = data?.consecutive_failures ?? 0;
+    .maybeSingle();
+  const next = (data?.consecutive_failures ?? 0) + 1;
   await supabase
     .from('cron_runs')
-    .update({ consecutive_failures: current + 1, last_error: msg })
+    .update({ consecutive_failures: next, last_error: msg })
     .eq('job_name', jobName);
 }
 
@@ -112,7 +112,7 @@ export async function scrapeAndPersist(opts: ScrapeOptions = {}): Promise<Scrape
   // 1. Record last_started_at
   await supabase
     .from('cron_runs')
-    .upsert({ job_name: JOB_NAME, last_started_at: now.toISOString() }, { onConflict: 'job_name' });
+    .update({ last_started_at: now.toISOString() }).eq('job_name', JOB_NAME);
 
   // 2. Load active edition
   const { data: edition } = await supabase
@@ -129,7 +129,7 @@ export async function scrapeAndPersist(opts: ScrapeOptions = {}): Promise<Scrape
 
   // 3. Resolve race slug/year
   const slug = opts.raceOverride?.slug ?? 'giro-d-italia';
-  const year = opts.raceOverride?.year ?? new Date(edition.start_date).getFullYear();
+  const year = opts.raceOverride?.year ?? new Date(edition.start_date).getUTCFullYear();
 
   // 4. Startlist — populate riders if none exist
   const { count: riderCount } = await supabase
