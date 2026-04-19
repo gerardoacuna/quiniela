@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createTestUser, userClient, setStageState } from './helpers';
 
-const STAGE_9 = '10000000-0000-0000-0000-000000000002'; // future (upcoming) per seed
-const STAGE_1 = '10000000-0000-0000-0000-000000000001'; // locked (published) per seed
-const RIDER_POG = '20000000-0000-0000-0000-000000000001';
-const RIDER_AYU = '20000000-0000-0000-0000-000000000002';
+const STAGE_9 = '10000000-0000-4000-8000-000000000002'; // future (upcoming) per seed
+const STAGE_1 = '10000000-0000-4000-8000-000000000001'; // locked (published) per seed
+const RIDER_POG = '20000000-0000-4000-8000-000000000001';
+const RIDER_AYU = '20000000-0000-4000-8000-000000000002';
 
 const RUN = process.env.SUPABASE_INTEGRATION === '1';
 const d = RUN ? describe : describe.skip;

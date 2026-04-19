@@ -10,18 +10,9 @@ import type { ActionResult } from './result';
 
 type Supa = SupabaseClient<Database>;
 
-// Postgres accepts any 8-4-4-4-12 hex string as uuid; zod 4's .uuid() requires a valid
-// version nibble (1-8), which our deterministic seed IDs (version nibble 0) don't satisfy.
-// Use a permissive hex-shape check that matches what Postgres itself accepts.
-const uuidLike = () =>
-  z.string().regex(
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-    'not a uuid-shaped string',
-  );
-
 const submitStagePickSchema = z.object({
-  stageId: uuidLike(),
-  riderId: uuidLike(),
+  stageId: z.string().uuid(),
+  riderId: z.string().uuid(),
 });
 
 export async function submitStagePickCore(
@@ -107,10 +98,10 @@ export async function submitStagePick(
 }
 
 const submitGcPicksSchema = z.object({
-  editionId: uuidLike(),
-  first: uuidLike(),
-  second: uuidLike(),
-  third: uuidLike(),
+  editionId: z.string().uuid(),
+  first: z.string().uuid(),
+  second: z.string().uuid(),
+  third: z.string().uuid(),
 });
 
 export async function submitGcPicksCore(
@@ -173,8 +164,8 @@ export async function submitGcPicks(
 }
 
 const submitJerseyPickSchema = z.object({
-  editionId: uuidLike(),
-  riderId: uuidLike(),
+  editionId: z.string().uuid(),
+  riderId: z.string().uuid(),
 });
 
 export async function submitJerseyPickCore(

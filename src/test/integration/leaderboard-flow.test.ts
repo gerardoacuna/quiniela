@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createTestUser, setStageState } from './helpers';
 
-const STAGE_1 = '10000000-0000-0000-0000-000000000001'; // seeded as published, in past
-const RIDER_POG = '20000000-0000-0000-0000-000000000001';
+const STAGE_1 = '10000000-0000-4000-8000-000000000001'; // seeded as published, in past
+const RIDER_POG = '20000000-0000-4000-8000-000000000001';
 
 const RUN = process.env.SUPABASE_INTEGRATION === '1';
 const d = RUN ? describe : describe.skip;

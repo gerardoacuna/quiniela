@@ -2,11 +2,11 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { submitStagePickCore } from '@/lib/actions/picks';
 import { createTestUser, userClient, setStageState } from './helpers';
 
-const STAGE_1 = '10000000-0000-0000-0000-000000000001';  // locked (past start_time, published) per seed
-const STAGE_9 = '10000000-0000-0000-0000-000000000002';  // future, double_points per seed
-const STAGE_21 = '10000000-0000-0000-0000-000000000003'; // future per seed
-const RIDER_POGACAR = '20000000-0000-0000-0000-000000000001';
-const RIDER_AYUSO = '20000000-0000-0000-0000-000000000002';
+const STAGE_1 = '10000000-0000-4000-8000-000000000001';  // locked (past start_time, published) per seed
+const STAGE_9 = '10000000-0000-4000-8000-000000000002';  // future, double_points per seed
+const STAGE_21 = '10000000-0000-4000-8000-000000000003'; // future per seed
+const RIDER_POGACAR = '20000000-0000-4000-8000-000000000001';
+const RIDER_AYUSO = '20000000-0000-4000-8000-000000000002';
 
 const RUN = process.env.SUPABASE_INTEGRATION === '1';
 const d = RUN ? describe : describe.skip;
@@ -61,7 +61,7 @@ d('submitStagePickCore', () => {
   it('allows updating the same-stage pick (editing)', async () => {
     const c = await userClient(user.email, user.password);
     // Change Stage 9 pick from Pogacar to Evenepoel — Pogacar is still on Stage 9 so no no-reuse conflict.
-    const EVENEPOEL = '20000000-0000-0000-0000-000000000003';
+    const EVENEPOEL = '20000000-0000-4000-8000-000000000003';
     const res = await submitStagePickCore(c, user.userId, { stageId: STAGE_9, riderId: EVENEPOEL });
     expect(res.ok).toBe(true);
   });
