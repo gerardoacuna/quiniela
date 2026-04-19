@@ -323,4 +323,50 @@ d('scrapeAndPersist integration', () => {
     expect(after).toBeGreaterThan(before ?? 0);
     expect(res.ok).toBe(false);
   });
+
+  it('writes scrape_error when all admin notification emails fail', async () => {
+    const admin = createAdminClient();
+
+    // Prime riders so the stage-1 scrape branch runs on the next call.
+    await scrapeAndPersist({
+      fetcher: fakeFetcher,
+      now: () => new Date('2026-05-09T11:00:00Z'),
+      raceOverride: { slug: 'giro-d-italia', year: 2025 },
+    });
+
+    await setStageState(STAGE_1_ID, {
+      start_time: '2026-05-09T12:00:00Z',
+      status: 'upcoming',
+    });
+
+    const { count: before } = await admin
+      .from('scrape_errors')
+      .select('id', { count: 'exact', head: true });
+
+    const failingEmailer = async () => {
+      throw new Error('smtp_down');
+    };
+
+    const res = await scrapeAndPersist({
+      fetcher: fakeFetcher,
+      now: () => new Date('2026-05-09T18:00:00Z'),
+      raceOverride: { slug: 'giro-d-italia', year: 2025 },
+      emailer: failingEmailer,
+    });
+
+    // The stage-1 scrape target itself still succeeds; email failure is non-fatal.
+    expect(res.targets.some((t) => t.target === 'stage-1' && t.status === 'ok')).toBe(true);
+
+    const { data: errs } = await admin
+      .from('scrape_errors')
+      .select('target, error')
+      .order('run_at', { ascending: false })
+      .limit(5);
+    expect(errs?.some((e) => e.target === 'notify-admins-stage-1')).toBe(true);
+
+    const { count: after } = await admin
+      .from('scrape_errors')
+      .select('id', { count: 'exact', head: true });
+    expect(after).toBeGreaterThan(before ?? 0);
+  });
 });

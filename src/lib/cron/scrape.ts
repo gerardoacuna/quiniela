@@ -71,35 +71,43 @@ async function bumpFailures(
 }
 
 async function notifyAdmins(
-  supabase: SupabaseAdmin,
+  supabase: ReturnType<typeof createAdminClient>,
   stageNumber: number,
   emailer?: (to: string, subject: string, text: string) => Promise<void>,
 ): Promise<void> {
-  try {
-    const { data: admins } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('role', 'admin')
-      .is('deleted_at', null);
+  const { data: admins } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('role', 'admin')
+    .is('deleted_at', null);
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-    const inspectUrl = `${appUrl}/admin/stages/${stageNumber}`;
-    const { subject, text } = stageDraftReady(stageNumber, inspectUrl);
+  const recipients = (admins ?? []).filter((a) => a.email).map((a) => a.email!);
+  if (recipients.length === 0) return;
 
-    for (const admin of admins ?? []) {
-      if (!admin.email) continue;
-      try {
-        if (emailer) {
-          await emailer(admin.email, subject, text);
-        } else {
-          await sendEmail({ to: admin.email, subject, text });
-        }
-      } catch {
-        // swallow per-recipient errors
-      }
-    }
-  } catch {
-    // swallow all errors
+  const site = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const tpl = stageDraftReady(stageNumber, `${site}/admin/stages/${stageNumber}`);
+
+  const results = await Promise.allSettled(
+    recipients.map(async (to) => {
+      if (emailer) await emailer(to, tpl.subject, tpl.text);
+      else await sendEmail({ to, subject: tpl.subject, text: tpl.text });
+    }),
+  );
+
+  const failures = results
+    .map((r, i) => ({ r, to: recipients[i] }))
+    .filter((x): x is { r: PromiseRejectedResult; to: string } => x.r.status === 'rejected');
+
+  if (failures.length === 0) return;
+
+  if (failures.length === recipients.length) {
+    const msg = failures[0].r.reason instanceof Error
+      ? failures[0].r.reason.message
+      : String(failures[0].r.reason);
+    await supabase.from('scrape_errors').insert({
+      target: `notify-admins-stage-${stageNumber}`,
+      error: `all_admin_emails_failed: ${msg}`,
+    });
   }
 }
 
