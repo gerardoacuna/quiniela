@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { publishStageResultsCore } from '@/lib/actions/admin-stage';
+import { publishStageResultsCore, cancelStageCore, resetStageToUpcomingCore } from '@/lib/actions/admin-stage';
 import { createTestUser, userClient } from './helpers';
 
 const STAGE_9 = '10000000-0000-4000-8000-000000000002';
@@ -78,5 +78,27 @@ d('publishStageResults (admin)', () => {
       results: [{ position: 1, rider_id: R_POG }],
     });
     expect(res.ok).toBe(false);
+  });
+
+  it('refuses to reset a published stage', async () => {
+    // Stage 9 is still published from the first test — try to reset it.
+    const c = await userClient(admin.email, admin.password);
+    const res = await resetStageToUpcomingCore(c, admin.userId, STAGE_9);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe('stage_already_published');
+
+    // Confirm stage_results are still present and stage is still published.
+    const a = createAdminClient();
+    const { data: results } = await a.from('stage_results').select('position').eq('stage_id', STAGE_9);
+    expect((results ?? []).length).toBeGreaterThan(0);
+    const { data: stage } = await a.from('stages').select('status').eq('id', STAGE_9).maybeSingle();
+    expect(stage?.status).toBe('published');
+  });
+
+  it('refuses to cancel a published stage', async () => {
+    const c = await userClient(admin.email, admin.password);
+    const res = await cancelStageCore(c, admin.userId, STAGE_9);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe('stage_already_published');
   });
 });

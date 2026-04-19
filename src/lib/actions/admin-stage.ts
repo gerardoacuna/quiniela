@@ -61,21 +61,61 @@ export async function publishStageResults(input: z.infer<typeof publishSchema>):
   return publishStageResultsCore(supabase, user.id, parsed.data);
 }
 
+export async function cancelStageCore(
+  supabase: Supa,
+  actorId: string,
+  stageId: string,
+): Promise<ActionResult> {
+  const { data: stage, error: loadErr } = await supabase
+    .from('stages').select('status').eq('id', stageId).maybeSingle();
+  if (loadErr) return { ok: false, error: loadErr.message };
+  if (!stage) return { ok: false, error: 'stage_not_found' };
+  if (stage.status === 'published') return { ok: false, error: 'stage_already_published' };
+
+  const { error } = await supabase
+    .from('stages').update({ status: 'cancelled' }).eq('id', stageId);
+  if (error) return { ok: false, error: error.message };
+
+  await supabase.from('audit_log').insert({
+    actor_id: actorId,
+    action: 'cancel_stage',
+    target: { stageId },
+  });
+
+  return { ok: true, data: undefined };
+}
+
 export async function cancelStage(stageId: string): Promise<ActionResult> {
   const parsed = z.string().uuid().safeParse(stageId);
   if (!parsed.success) return { ok: false, error: 'invalid_stage_id' };
 
   const { user } = await requireAdmin();
   const supabase = await createClient();
+  return cancelStageCore(supabase, user.id, parsed.data);
+}
+
+export async function resetStageToUpcomingCore(
+  supabase: Supa,
+  actorId: string,
+  stageId: string,
+): Promise<ActionResult> {
+  const { data: stage, error: loadErr } = await supabase
+    .from('stages').select('status').eq('id', stageId).maybeSingle();
+  if (loadErr) return { ok: false, error: loadErr.message };
+  if (!stage) return { ok: false, error: 'stage_not_found' };
+  if (stage.status === 'published') return { ok: false, error: 'stage_already_published' };
+
+  const { error: delErr } = await supabase.from('stage_results').delete().eq('stage_id', stageId);
+  if (delErr) return { ok: false, error: delErr.message };
 
   const { error } = await supabase
-    .from('stages').update({ status: 'cancelled' }).eq('id', parsed.data);
+    .from('stages').update({ status: 'upcoming' }).eq('id', stageId);
   if (error) return { ok: false, error: error.message };
 
   await supabase.from('audit_log').insert({
-    actor_id: user.id,
-    action: 'cancel_stage',
-    target: { stageId: parsed.data },
+    actor_id: actorId,
+    action: 'reset_stage',
+    target: { stageId },
   });
 
   return { ok: true, data: undefined };
@@ -87,19 +127,5 @@ export async function resetStageToUpcoming(stageId: string): Promise<ActionResul
 
   const { user } = await requireAdmin();
   const supabase = await createClient();
-
-  const { error: delErr } = await supabase.from('stage_results').delete().eq('stage_id', parsed.data);
-  if (delErr) return { ok: false, error: delErr.message };
-
-  const { error } = await supabase
-    .from('stages').update({ status: 'upcoming' }).eq('id', parsed.data);
-  if (error) return { ok: false, error: error.message };
-
-  await supabase.from('audit_log').insert({
-    actor_id: user.id,
-    action: 'reset_stage',
-    target: { stageId: parsed.data },
-  });
-
-  return { ok: true, data: undefined };
+  return resetStageToUpcomingCore(supabase, user.id, parsed.data);
 }
