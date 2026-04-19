@@ -73,20 +73,32 @@ export async function sendPickReminders(opts: ReminderOptions = {}): Promise<Rem
         `${site}/picks/stage/${stage.number}`,
       );
 
+      // Claim the (user, stage) pair atomically before sending. onConflict=do nothing
+      // means a concurrent run that already claimed this pair gets an empty result
+      // and we skip — preventing double-sends under at-least-once cron delivery.
+      const { data: claimed } = await admin
+        .from('pick_reminders_sent')
+        .upsert(
+          { user_id: u.id, stage_id: stage.id },
+          { onConflict: 'user_id,stage_id', ignoreDuplicates: true },
+        )
+        .select('user_id');
+      if (!claimed || claimed.length === 0) continue;
+
       try {
         if (opts.emailer) {
           await opts.emailer(u.email!, tpl.subject, tpl.text);
         } else {
           await sendEmail({ to: u.email!, subject: tpl.subject, text: tpl.text });
         }
-
-        // Insert pick_reminders_sent only after successful email
-        await admin
-          .from('pick_reminders_sent')
-          .insert({ user_id: u.id, stage_id: stage.id });
-
         sent++;
       } catch (e) {
+        // Email failed — release the claim so the next run can retry.
+        await admin
+          .from('pick_reminders_sent')
+          .delete()
+          .eq('user_id', u.id)
+          .eq('stage_id', stage.id);
         const message = e instanceof Error ? e.message : String(e);
         errors.push(`user=${u.id}:${message}`);
       }

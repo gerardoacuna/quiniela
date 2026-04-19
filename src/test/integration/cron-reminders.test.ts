@@ -82,6 +82,36 @@ d('sendPickReminders integration', () => {
     expect(second.sent).toBe(0);
   });
 
+  it('rolls back claim when emailer throws so next run retries', async () => {
+    await setStageState(STAGE_9_ID, { start_time: IN_WINDOW, status: 'upcoming' });
+
+    const failing = async () => {
+      throw new Error('smtp_down');
+    };
+
+    const first = await sendPickReminders({
+      now: () => NOW,
+      windowMinutes: 120,
+      emailer: failing,
+    });
+    expect(first.ok).toBe(false);
+    expect(first.sent).toBe(0);
+    expect(first.errors.length).toBeGreaterThanOrEqual(1);
+
+    // The failed claim must have been released — next run with a working emailer succeeds.
+    const sent: { to: string; subject: string }[] = [];
+    const second = await sendPickReminders({
+      now: () => NOW,
+      windowMinutes: 120,
+      emailer: async (to, subject) => {
+        sent.push({ to, subject });
+      },
+    });
+    expect(second.ok).toBe(true);
+    expect(second.sent).toBeGreaterThanOrEqual(1);
+    expect(sent.some((e) => e.to === userA.email)).toBe(true);
+  });
+
   it('does not send when stage is outside the 2h window', async () => {
     await setStageState(STAGE_9_ID, { start_time: OUT_OF_WINDOW, status: 'upcoming' });
 
