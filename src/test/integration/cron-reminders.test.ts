@@ -112,6 +112,32 @@ d('sendPickReminders integration', () => {
     expect(sent.some((e) => e.to === userA.email)).toBe(true);
   });
 
+  it('concurrent runs send exactly once per user', async () => {
+    await setStageState(STAGE_9_ID, { start_time: IN_WINDOW, status: 'upcoming' });
+
+    const sent: { to: string; subject: string }[] = [];
+    const emailer = async (to: string, subject: string) => {
+      sent.push({ to, subject });
+    };
+
+    const [a, b] = await Promise.all([
+      sendPickReminders({ now: () => NOW, windowMinutes: 120, emailer }),
+      sendPickReminders({ now: () => NOW, windowMinutes: 120, emailer }),
+    ]);
+
+    const totalSent = a.sent + b.sent;
+    expect(totalSent).toBeGreaterThanOrEqual(1);
+
+    const emailCounts = sent.reduce<Record<string, number>>((acc, e) => {
+      acc[e.to] = (acc[e.to] ?? 0) + 1;
+      return acc;
+    }, {});
+    for (const to of Object.keys(emailCounts)) {
+      expect(emailCounts[to]).toBe(1);
+    }
+    expect(sent.length).toBe(totalSent);
+  });
+
   it('does not send when stage is outside the 2h window', async () => {
     await setStageState(STAGE_9_ID, { start_time: OUT_OF_WINDOW, status: 'upcoming' });
 
