@@ -20,10 +20,15 @@ insert into public.riders (id, edition_id, pcs_slug, name, team, bib, status) va
 -- Dev auth users for local flow testing.
 -- Supabase's pgcrypto extension provides crypt() and gen_salt() for bcrypt password hashing.
 
-insert into auth.users (id, email, encrypted_password, email_confirmed_at, aud, role, instance_id, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+-- GoTrue's Go structs don't tolerate NULL in the token string columns; seed them as ''.
+insert into auth.users (
+  id, email, encrypted_password, email_confirmed_at, aud, role, instance_id,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change_token_current, email_change, phone_change_token, phone_change, reauthentication_token
+)
 values
-  ('30000000-0000-0000-0000-000000000001', 'dev-admin@example.com', crypt('devpass123', gen_salt('bf')), now(), 'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000', '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now()),
-  ('30000000-0000-0000-0000-000000000002', 'dev-player@example.com', crypt('devpass123', gen_salt('bf')), now(), 'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000', '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now())
+  ('30000000-0000-0000-0000-000000000001', 'dev-admin@example.com',  crypt('devpass123', gen_salt('bf')), now(), 'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000', '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', ''),
+  ('30000000-0000-0000-0000-000000000002', 'dev-player@example.com', crypt('devpass123', gen_salt('bf')), now(), 'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000', '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '')
 on conflict (id) do nothing;
 
 insert into public.profiles (id, display_name, role, email) values
