@@ -89,7 +89,7 @@ export default async function StageDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Everyone's picks</CardTitle>
+          <CardTitle>Everyone&apos;s picks</CardTitle>
         </CardHeader>
         <CardContent>
           {picks.length === 0 ? (
