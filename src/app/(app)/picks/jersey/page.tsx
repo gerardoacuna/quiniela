@@ -6,12 +6,14 @@ import { listActiveRiders } from '@/lib/queries/riders';
 import { JerseyPickForm } from './form';
 
 export default async function JerseyPickPage() {
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
   const { user } = await requireProfile();
   const edition = await getActiveEdition();
   if (!edition) redirect('/home');
 
   const stage1 = await getStageByNumber(edition.id, 1);
-  if (stage1 && new Date(stage1.start_time).getTime() <= Date.now()) {
+  if (stage1 && new Date(stage1.start_time).getTime() <= now) {
     redirect('/picks');
   }
 

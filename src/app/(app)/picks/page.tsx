@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export default async function PicksPage() {
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
   const { user } = await requireProfile();
   const edition = await getActiveEdition();
   if (!edition) redirect('/home');
@@ -21,7 +23,7 @@ export default async function PicksPage() {
   const picksByStage = new Map(stagePicks.map((p) => [p.stage_id, p]));
 
   const stage1 = stages.find((s) => s.number === 1);
-  const stage1Locked = stage1 ? new Date(stage1.start_time).getTime() <= Date.now() : false;
+  const stage1Locked = stage1 ? new Date(stage1.start_time).getTime() <= now : false;
 
   return (
     <div className="p-4 space-y-4">
@@ -63,7 +65,7 @@ export default async function PicksPage() {
       <ul className="space-y-2">
         {stages.map((s) => {
           const pick = picksByStage.get(s.id);
-          const locked = new Date(s.start_time).getTime() <= Date.now();
+          const locked = new Date(s.start_time).getTime() <= now;
           const published = s.status === 'published';
           return (
             <li key={s.id}>

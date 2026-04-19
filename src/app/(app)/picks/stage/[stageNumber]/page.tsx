@@ -10,6 +10,8 @@ export default async function StagePickPage({
 }: {
   params: Promise<{ stageNumber: string }>;
 }) {
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
   const { user } = await requireProfile();
   const edition = await getActiveEdition();
   if (!edition) redirect('/home');
@@ -20,7 +22,7 @@ export default async function StagePickPage({
 
   const stage = await getStageByNumber(edition.id, stageNumber);
   if (!stage) notFound();
-  if (new Date(stage.start_time).getTime() <= Date.now()) redirect(`/stage/${stageNumber}`);
+  if (new Date(stage.start_time).getTime() <= now) redirect(`/stage/${stageNumber}`);
 
   const [riders, allPicks] = await Promise.all([
     listActiveRiders(edition.id),

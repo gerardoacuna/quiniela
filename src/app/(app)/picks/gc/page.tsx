@@ -6,13 +6,15 @@ import { listActiveRiders } from '@/lib/queries/riders';
 import { GcPickForm } from './form';
 
 export default async function GcPickPage() {
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
   const { user } = await requireProfile();
   const edition = await getActiveEdition();
   if (!edition) redirect('/home');
 
   // Enforce the lock window server-side: redirect away if Stage 1 has already started.
   const stage1 = await getStageByNumber(edition.id, 1);
-  if (stage1 && new Date(stage1.start_time).getTime() <= Date.now()) {
+  if (stage1 && new Date(stage1.start_time).getTime() <= now) {
     redirect('/picks');
   }
 
