@@ -1,0 +1,66 @@
+import { redirect, notFound } from 'next/navigation';
+import { requireProfile } from '@/lib/auth/require-user';
+import { getActiveEdition, getStageByNumber } from '@/lib/queries/stages';
+import { getUserStagePicks } from '@/lib/queries/picks';
+import { listActiveRiders } from '@/lib/queries/riders';
+import { StagePickForm } from './form';
+
+export default async function StagePickPage({
+  params,
+}: {
+  params: Promise<{ stageNumber: string }>;
+}) {
+  const { user } = await requireProfile();
+  const edition = await getActiveEdition();
+  if (!edition) redirect('/home');
+
+  const { stageNumber: numRaw } = await params;
+  const stageNumber = Number(numRaw);
+  if (!Number.isInteger(stageNumber)) notFound();
+
+  const stage = await getStageByNumber(edition.id, stageNumber);
+  if (!stage) notFound();
+  if (new Date(stage.start_time).getTime() <= Date.now()) redirect(`/stage/${stageNumber}`);
+
+  const [riders, allPicks] = await Promise.all([
+    listActiveRiders(edition.id),
+    getUserStagePicks(user.id, edition.id),
+  ]);
+
+  const picksByRider = new Map<string, { stage_id: string; stage_number: number; stage_status: string }>();
+  for (const p of allPicks) {
+    // Supabase returns nested rows via inner join; access via the relation name.
+    const stagesRel = (p as unknown as { stages: { number: number; status: string } }).stages;
+    picksByRider.set(p.rider_id, {
+      stage_id: p.stage_id,
+      stage_number: stagesRel.number,
+      stage_status: stagesRel.status,
+    });
+  }
+
+  const currentPickForThisStage = allPicks.find((p) => p.stage_id === stage.id);
+
+  return (
+    <StagePickForm
+      stageId={stage.id}
+      stageNumber={stage.number}
+      doublePoints={stage.double_points}
+      startTimeIso={stage.start_time}
+      initialSelectedRiderId={currentPickForThisStage?.rider_id ?? null}
+      riders={riders.map((r) => {
+        const used = picksByRider.get(r.id);
+        return {
+          id: r.id,
+          name: r.name,
+          team: r.team,
+          bib: r.bib,
+          status: r.status,
+          usedOnStageNumber:
+            used && used.stage_id !== stage.id && used.stage_status !== 'cancelled'
+              ? used.stage_number
+              : undefined,
+        };
+      })}
+    />
+  );
+}
