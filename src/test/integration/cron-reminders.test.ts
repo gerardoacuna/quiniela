@@ -127,6 +127,9 @@ d('sendPickReminders integration', () => {
 
     const totalSent = a.sent + b.sent;
     expect(totalSent).toBeGreaterThanOrEqual(1);
+    // Guard: if the claim mechanism silently excluded userA, totalSent could be
+    // 0-from-somewhere-else and the exactly-once loop below would trivially pass.
+    expect(sent.some((e) => e.to === userA.email)).toBe(true);
 
     const emailCounts = sent.reduce<Record<string, number>>((acc, e) => {
       acc[e.to] = (acc[e.to] ?? 0) + 1;

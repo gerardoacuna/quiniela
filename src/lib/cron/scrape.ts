@@ -100,6 +100,10 @@ async function notifyAdmins(
 
   if (failures.length === 0) return;
 
+  // Partial failure is deliberately not surfaced to scrape_errors: at least one
+  // admin was notified and can investigate. Only log when every admin's email
+  // failed, which usually means the adapter itself (Resend key, SMTP host) is
+  // broken — that's the case operators need to see on /admin/errors.
   if (failures.length === recipients.length) {
     const msg = failures[0].r.reason instanceof Error
       ? failures[0].r.reason.message
