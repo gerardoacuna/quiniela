@@ -55,3 +55,7 @@ supabase/.temp/
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Serwist service worker build artifacts
+/public/sw.js
+/public/swe-worker-*.js
