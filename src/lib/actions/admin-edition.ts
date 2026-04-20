@@ -11,6 +11,8 @@ const stageFlagsSchema = z.object({
     id: z.string().uuid(),
     counts_for_scoring: z.boolean(),
     double_points: z.boolean(),
+    terrain: z.enum(['flat', 'hilly', 'mountain', 'itt']),
+    km: z.number().int().min(0).max(400),
   })),
 });
 
@@ -27,6 +29,8 @@ export async function updateStageFlags(input: z.infer<typeof stageFlagsSchema>):
       .update({
         counts_for_scoring: s.counts_for_scoring,
         double_points: s.double_points,
+        terrain: s.terrain,
+        km: s.km,
       })
       .eq('id', s.id)
       .eq('edition_id', parsed.data.editionId);
