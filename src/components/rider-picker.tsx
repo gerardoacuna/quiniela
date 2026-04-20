@@ -50,29 +50,34 @@ export function RiderPicker({
             (disableUsed && (r.usedOnStageNumber !== undefined || r.disabledReason !== undefined) && r.id !== selectedId);
           const selected = r.id === selectedId;
           return (
-            <li
-              key={r.id}
-              className={`flex items-center justify-between px-3 py-2 border-b last:border-b-0 ${
-                disabled ? 'opacity-40' : 'cursor-pointer hover:bg-muted'
-              } ${selected ? 'bg-primary/10' : ''}`}
-              onClick={() => !disabled && onSelect(r.id)}
-            >
-              <div>
-                <div className="font-medium">{r.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {r.bib ? `#${r.bib} · ` : ''}{r.team ?? ''}
+            <li key={r.id} className="border-b last:border-b-0">
+              <button
+                type="button"
+                aria-label={r.name}
+                aria-pressed={selected}
+                disabled={disabled}
+                className={`w-full flex items-center justify-between px-3 py-2 text-left ${
+                  disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-muted'
+                } ${selected ? 'bg-primary/10' : ''}`}
+                onClick={() => !disabled && onSelect(r.id)}
+              >
+                <div>
+                  <div className="font-medium">{r.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {r.bib ? `#${r.bib} · ` : ''}{r.team ?? ''}
+                  </div>
                 </div>
-              </div>
-              <div className="text-xs">
-                {r.status !== 'active' && <Badge variant="destructive" className="mr-1">{r.status.toUpperCase()}</Badge>}
-                {r.id !== selectedId && r.disabledReason !== undefined && (
-                  <Badge variant="secondary">{r.disabledReason}</Badge>
-                )}
-                {r.id !== selectedId && r.disabledReason === undefined && r.usedOnStageNumber !== undefined && (
-                  <Badge variant="secondary">Stage {r.usedOnStageNumber}</Badge>
-                )}
-                {selected && <Badge>Selected</Badge>}
-              </div>
+                <div className="text-xs">
+                  {r.status !== 'active' && <Badge variant="destructive" className="mr-1">{r.status.toUpperCase()}</Badge>}
+                  {r.id !== selectedId && r.disabledReason !== undefined && (
+                    <Badge variant="secondary">{r.disabledReason}</Badge>
+                  )}
+                  {r.id !== selectedId && r.disabledReason === undefined && r.usedOnStageNumber !== undefined && (
+                    <Badge variant="secondary">Stage {r.usedOnStageNumber}</Badge>
+                  )}
+                  {selected && <Badge>Selected</Badge>}
+                </div>
+              </button>
             </li>
           );
         })}

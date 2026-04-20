@@ -34,6 +34,7 @@ export function StagePublishForm({
               <td className="p-2 text-center font-mono">{r.position}</td>
               <td className="p-2">
                 <select
+                  aria-label={`Position ${r.position}`}
                   value={r.rider_id}
                   onChange={(e) => {
                     const copy = [...rows];
@@ -84,7 +85,7 @@ export function StagePublishForm({
           });
         }}>Reset</Button>
       </div>
-      {status === 'saved' && <p className="text-sm text-green-600">Saved.</p>}
+      {status === 'saved' && <p className="text-sm text-green-600">Results published.</p>}
       {typeof status === 'string' && status !== 'saving' && status !== 'saved' && (
         <p className="text-sm text-red-600">{status}</p>
       )}
