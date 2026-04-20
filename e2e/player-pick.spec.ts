@@ -3,7 +3,9 @@ import { createTestUser, signInWithPassword } from './helpers';
 import { createClient as createSupabaseJs } from '@supabase/supabase-js';
 import type { Database } from '../src/lib/types/database';
 
-const STAGE_9_ID = '10000000-0000-4000-8000-000000000002';
+// Use Stage 21 to avoid any cross-contamination with admin-publish.spec.ts
+// which mutates Stage 9.
+const STAGE_21_ID = '10000000-0000-4000-8000-000000000003';
 const RIDER_POG = '20000000-0000-4000-8000-000000000001';
 
 const admin = createSupabaseJs<Database>(
@@ -24,21 +26,26 @@ test.describe('player picks', () => {
         start_time: new Date(Date.now() + 30 * 86400_000).toISOString(),
         status: 'upcoming',
       })
-      .eq('id', STAGE_9_ID);
+      .eq('id', STAGE_21_ID);
     // Remove any leftover pick by this brand-new user (shouldn't exist, but belt-and-suspenders).
-    await admin.from('stage_picks').delete().eq('user_id', user.userId).eq('stage_id', STAGE_9_ID);
+    await admin.from('stage_picks').delete().eq('user_id', user.userId).eq('stage_id', STAGE_21_ID);
   });
 
   test.afterAll(async () => {
     await admin.from('stage_picks').delete().eq('user_id', user.userId);
+    // Restore Stage 21 to seed baseline so subsequent test runs stay deterministic.
+    await admin
+      .from('stages')
+      .update({ start_time: '2026-05-31T12:00:00Z', status: 'upcoming' })
+      .eq('id', STAGE_21_ID);
     await user.cleanup();
   });
 
   test('sign-in → pick rider → reload shows same pick', async ({ page }) => {
     await signInWithPassword(page, user.email, user.password);
 
-    // Navigate to the Stage 9 pick page.
-    await page.goto('/picks/stage/9');
+    // Navigate to the Stage 21 pick page.
+    await page.goto('/picks/stage/21');
 
     // The rider picker shows "Tadej Pogačar" as a button (aria-label matches name).
     await page.getByRole('button', { name: /Pogačar/i }).click();
@@ -61,7 +68,7 @@ test.describe('player picks', () => {
       .from('stage_picks')
       .select('rider_id')
       .eq('user_id', user.userId)
-      .eq('stage_id', STAGE_9_ID);
+      .eq('stage_id', STAGE_21_ID);
     expect(data?.[0]?.rider_id).toBe(RIDER_POG);
   });
 });
