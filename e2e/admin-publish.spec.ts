@@ -42,6 +42,9 @@ test.describe('admin publish stage', () => {
   test.afterAll(async () => {
     await admin.from('stage_results').delete().eq('stage_id', STAGE_9_ID);
     await admin.from('stage_picks').delete().eq('stage_id', STAGE_9_ID);
+    // Reset BOTH start_time and status — publishStageResults flips status to
+    // 'published' during the test, and leaving it that way can confuse any
+    // vitest suite that expects Stage 9 in the seed baseline after E2E runs.
     await admin
       .from('stages')
       .update({
