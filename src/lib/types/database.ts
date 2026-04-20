@@ -551,9 +551,11 @@ export type Database = {
           double_points: boolean
           edition_id: string
           id: string
+          km: number
           number: number
           start_time: string
           status: Database["public"]["Enums"]["stage_status"]
+          terrain: Database["public"]["Enums"]["stage_terrain"]
         }
         Insert: {
           counts_for_scoring?: boolean
@@ -561,9 +563,11 @@ export type Database = {
           double_points?: boolean
           edition_id: string
           id?: string
+          km?: number
           number: number
           start_time: string
           status?: Database["public"]["Enums"]["stage_status"]
+          terrain?: Database["public"]["Enums"]["stage_terrain"]
         }
         Update: {
           counts_for_scoring?: boolean
@@ -571,9 +575,11 @@ export type Database = {
           double_points?: boolean
           edition_id?: string
           id?: string
+          km?: number
           number?: number
           start_time?: string
           status?: Database["public"]["Enums"]["stage_status"]
+          terrain?: Database["public"]["Enums"]["stage_terrain"]
         }
         Relationships: [
           {
@@ -622,6 +628,7 @@ export type Database = {
         | "results_draft"
         | "published"
         | "cancelled"
+      stage_terrain: "flat" | "hilly" | "mountain" | "itt"
       user_role: "player" | "admin"
     }
     CompositeTypes: {
@@ -760,6 +767,7 @@ export const Constants = {
         "published",
         "cancelled",
       ],
+      stage_terrain: ["flat", "hilly", "mountain", "itt"],
       user_role: ["player", "admin"],
     },
   },

@@ -5,10 +5,10 @@ create extension if not exists pgcrypto;
 insert into public.editions (id, slug, name, start_date, end_date, is_active) values
   ('00000000-0000-4000-8000-000000000001', 'giro-2026', 'Giro d''Italia 2026', '2026-05-09', '2026-05-31', true);
 
-insert into public.stages (id, edition_id, number, start_time, counts_for_scoring, double_points, status) values
-  ('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001', 1,  '2026-05-09 12:00:00+00', true,  false, 'upcoming'),
-  ('10000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000001', 9,  '2026-05-17 12:00:00+00', true,  true,  'upcoming'),
-  ('10000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000001', 21, '2026-05-31 12:00:00+00', true,  false, 'upcoming');
+insert into public.stages (id, edition_id, number, start_time, counts_for_scoring, double_points, status, terrain, km) values
+  ('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001', 1,  '2026-05-09 12:00:00+00', true,  false, 'upcoming', 'flat',     197),
+  ('10000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000001', 9,  '2026-05-17 12:00:00+00', true,  true,  'upcoming', 'mountain', 171),
+  ('10000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000001', 21, '2026-05-31 12:00:00+00', true,  false, 'upcoming', 'itt',       28);
 
 insert into public.riders (id, edition_id, pcs_slug, name, team, bib, status) values
   ('20000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001', 'tadej-pogacar',     'Tadej Pogačar',      'UAE Team Emirates', 1,  'active'),
