@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requireProfile } from '@/lib/auth/require-user';
-import { getActiveEdition, getStageByNumber } from '@/lib/queries/stages';
-import { getUserGcPicks } from '@/lib/queries/picks';
-import { listActiveRiders } from '@/lib/queries/riders';
+import { getActiveEdition } from '@/lib/queries/stages';
+import { createClient } from '@/lib/supabase/server';
 import { GcPickForm } from './form';
 
 export default async function GcPickPage() {
@@ -12,34 +11,49 @@ export default async function GcPickPage() {
   const edition = await getActiveEdition();
   if (!edition) redirect('/home');
 
-  // Enforce the lock window server-side: redirect away if Stage 1 has already started.
-  const stage1 = await getStageByNumber(edition.id, 1);
-  if (stage1 && new Date(stage1.start_time).getTime() <= now) {
-    redirect('/picks');
-  }
-
-  const [riders, existingPicks] = await Promise.all([
-    listActiveRiders(edition.id),
-    getUserGcPicks(user.id, edition.id),
+  const supabase = await createClient();
+  const [{ data: stage1 }, { data: gcPicks }, { data: riders }] = await Promise.all([
+    supabase.from('stages').select('start_time').eq('edition_id', edition.id).eq('number', 1).maybeSingle(),
+    supabase
+      .from('gc_picks')
+      .select('position, rider_id, riders!inner(id, name, team, bib, status)')
+      .eq('user_id', user.id)
+      .eq('edition_id', edition.id)
+      .order('position'),
+    supabase
+      .from('riders')
+      .select('id, name, team, bib, status')
+      .eq('edition_id', edition.id)
+      .eq('status', 'active')
+      .order('name'),
   ]);
 
-  const byPosition = new Map(existingPicks.map((p) => [p.position, p.rider_id]));
+  const isLocked = stage1 ? new Date(stage1.start_time).getTime() <= now : false;
+
+  type GcRow = {
+    position: number;
+    rider_id: string;
+    riders: { id: string; name: string; team: string | null; bib: number | null; status: 'active' | 'dnf' | 'dns' };
+  };
+  const initial = ((gcPicks ?? []) as unknown as GcRow[]).map((g) => ({
+    position: g.position,
+    rider: g.riders,
+  }));
 
   return (
     <GcPickForm
       editionId={edition.id}
-      initial={{
-        first: byPosition.get(1) ?? null,
-        second: byPosition.get(2) ?? null,
-        third: byPosition.get(3) ?? null,
-      }}
-      riders={riders.map((r) => ({
-        id: r.id,
-        name: r.name,
-        team: r.team,
-        bib: r.bib,
-        status: r.status,
-      }))}
+      riders={
+        (riders ?? []) as Array<{
+          id: string;
+          name: string;
+          team: string | null;
+          bib: number | null;
+          status: 'active' | 'dnf' | 'dns';
+        }>
+      }
+      initialPicks={initial}
+      isLocked={isLocked}
     />
   );
 }
