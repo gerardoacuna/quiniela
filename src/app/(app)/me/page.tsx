@@ -1,113 +1,266 @@
 import { requireProfile } from '@/lib/auth/require-user';
-import { getActiveEdition } from '@/lib/queries/stages';
-import { getUserStagePicks, getUserGcPicks, getUserJerseyPick } from '@/lib/queries/picks';
-import { listActiveRiders } from '@/lib/queries/riders';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { getMeData } from '@/lib/queries/me';
+import { stagePoints } from '@/lib/scoring';
+import { ordinal } from '@/components/design/time';
+import { PageHeading } from '@/app/(app)/picks/page-heading';
+import { SectionHeading } from '@/app/(app)/picks/section-heading';
+import { Card } from '@/components/design/card';
+import { BibTile } from '@/components/design/bib-tile';
 import { SignOutButton } from '@/components/sign-out-button';
+import { BigStat } from './big-stat';
 
 export default async function MePage() {
-  const { user, profile } = await requireProfile();
-  const edition = await getActiveEdition();
+  const { user } = await requireProfile();
+  const data = await getMeData(user.id);
 
-  if (!edition) {
+  if (!data) {
     return (
-      <div className="p-4 space-y-4">
-        <h1 className="text-2xl font-bold">Me</h1>
-        <p className="text-sm text-muted-foreground">No active edition.</p>
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <PageHeading eyebrow="Your account" title="You" />
+        <Card>
+          <div style={{ fontSize: 14, color: 'var(--ink-mute)' }}>No active edition.</div>
+        </Card>
         <SignOutButton />
       </div>
     );
   }
 
-  const [stagePicks, gcPicks, jerseyPick, riders] = await Promise.all([
-    getUserStagePicks(user.id, edition.id),
-    getUserGcPicks(user.id, edition.id),
-    getUserJerseyPick(user.id, edition.id),
-    listActiveRiders(edition.id),
-  ]);
+  const { edition, profile, rank, board, stagePicks, gcPicks, jerseyPick, results } = data;
 
-  const riderById = new Map(riders.map((r) => [r.id, r]));
+  // Scored stage picks — only stages that are published
+  const scoredStagePicks = stagePicks
+    .filter((p) => p.stages.status === 'published')
+    .map((p) => {
+      const stageResults = results.filter((r) => r.stage_id === p.stage_id);
+      const pts = stagePoints(
+        { rider_id: p.rider_id },
+        { double_points: p.stages.double_points, status: 'published' },
+        stageResults,
+      );
+      const resultRow = stageResults.find((r) => r.rider_id === p.rider_id);
+      return {
+        stageN: p.stages.number,
+        riderName: p.riders.name,
+        stageDetail: `Stage ${p.stages.number} · ${p.stages.terrain} · ${p.stages.km} km`,
+        position: resultRow?.position ?? null,
+        points: pts,
+      };
+    })
+    .sort((a, b) => a.stageN - b.stageN);
+
+  // Count of picks made across counted stages vs total
+  const totalPicksMade = stagePicks.length;
+  const totalCountedStages = stagePicks.filter((p) => p.stages.status === 'published').length;
+
+  const totalPoints = board?.total_points ?? 0;
+  const exactWinners = board?.exact_winners_count ?? 0;
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Me</h1>
+    <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <PageHeading
+        eyebrow="Your account"
+        title="You"
+        sub={profile.email ?? ''}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{profile.display_name}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1 text-sm">
-          <div className="text-muted-foreground">{profile.email ?? user.email}</div>
-          <div className="text-muted-foreground capitalize">Role: {profile.role}</div>
-        </CardContent>
+      {/* 4-col stats grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+        <BigStat label="Rank" value={rank != null ? `#${rank}` : '—'} />
+        <BigStat label="Points" value={totalPoints} mono />
+        <BigStat label="Exact" value={exactWinners} mono />
+        <BigStat label="Made" value={`${totalPicksMade}/${totalCountedStages}`} mono />
+      </div>
+
+      {/* Stage picks history */}
+      <SectionHeading label="Stage picks · history" />
+      <Card pad={0}>
+        {scoredStagePicks.length === 0 ? (
+          <div style={{ padding: '14px', fontSize: 13, color: 'var(--ink-mute)' }}>
+            No scored picks yet.
+          </div>
+        ) : (
+          scoredStagePicks.map((s) => (
+            <div
+              key={s.stageN}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '36px 1fr auto auto',
+                gap: 10,
+                alignItems: 'center',
+                padding: '10px 14px',
+                borderBottom: '1px solid var(--hair)',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: 22,
+                  color: 'var(--ink)',
+                }}
+              >
+                {s.stageN}
+              </span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{s.riderName}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{s.stageDetail}</div>
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+                {s.position ? ordinal(s.position) : '—'}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: s.points > 0 ? 'var(--accent)' : 'var(--ink-mute)',
+                  width: 34,
+                  textAlign: 'right',
+                }}
+              >
+                +{s.points}
+              </span>
+            </div>
+          ))
+        )}
       </Card>
 
+      {/* Pre-race picks */}
+      <SectionHeading label="Pre-race picks" />
       <Card>
-        <CardHeader>
-          <CardTitle>Your picks — {edition.name}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <section>
-            <h3 className="font-semibold mb-1">Stages</h3>
-            {stagePicks.length === 0 ? (
-              <p className="text-muted-foreground">No stage picks yet.</p>
-            ) : (
-              <ul className="space-y-1">
-                {stagePicks
-                  .slice()
-                  .sort((a, b) => {
-                    // Sort by stage number, using the nested relation.
-                    const an = (a as unknown as { stages: { number: number } }).stages.number;
-                    const bn = (b as unknown as { stages: { number: number } }).stages.number;
-                    return an - bn;
-                  })
-                  .map((p) => {
-                    const stageNum = (p as unknown as { stages: { number: number } }).stages.number;
-                    const rider = riderById.get(p.rider_id);
-                    return (
-                      <li key={p.id} className="flex justify-between">
-                        <span>Stage {stageNum}</span>
-                        <span>{rider?.name ?? p.rider_id}</span>
-                      </li>
-                    );
-                  })}
-              </ul>
-            )}
-          </section>
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--ink-mute)',
+            fontFamily: 'var(--font-mono)',
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+          }}
+        >
+          GC Top 3
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
+          {gcPicks.length === 0
+            ? [0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: 'var(--surface-alt, var(--surface))',
+                    border: '1px solid var(--hair)',
+                    borderRadius: 'var(--radius)',
+                    padding: 8,
+                    textAlign: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      color: 'var(--accent)',
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                    }}
+                  >
+                    P{i + 1}
+                  </div>
+                  <div style={{ margin: '6px auto', opacity: 0.3 }}>
+                    <BibTile num={null} size={30} />
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-mute)' }}>—</div>
+                </div>
+              ))
+            : gcPicks.map((g) => (
+                <div
+                  key={g.position}
+                  style={{
+                    background: 'var(--surface-alt, var(--surface))',
+                    border: '1px solid var(--hair)',
+                    borderRadius: 'var(--radius)',
+                    padding: 8,
+                    textAlign: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      color: 'var(--accent)',
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                    }}
+                  >
+                    P{g.position}
+                  </div>
+                  <div style={{ margin: '6px auto' }}>
+                    <BibTile num={g.riders.bib} size={30} />
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 600 }}>
+                    {g.riders.name.split(' ').slice(-1)[0]}
+                  </div>
+                </div>
+              ))}
+        </div>
 
-          <Separator />
+        <div style={{ height: 1, background: 'var(--hair)', margin: '14px 0' }} />
 
-          <section>
-            <h3 className="font-semibold mb-1">GC top 3</h3>
-            {gcPicks.length === 0 ? (
-              <p className="text-muted-foreground">No GC picks.</p>
-            ) : (
-              <ul className="space-y-1">
-                {gcPicks.map((p) => (
-                  <li key={p.position} className="flex justify-between">
-                    <span>{p.position}.</span>
-                    <span>{riderById.get(p.rider_id)?.name ?? p.rider_id}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--ink-mute)',
+            fontFamily: 'var(--font-mono)',
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+          }}
+        >
+          Points jersey
+        </div>
 
-          <Separator />
-
-          <section>
-            <h3 className="font-semibold mb-1">Points jersey</h3>
-            {jerseyPick ? (
-              <p>{riderById.get(jerseyPick.rider_id)?.name ?? jerseyPick.rider_id}</p>
-            ) : (
-              <p className="text-muted-foreground">No pick.</p>
-            )}
-          </section>
-        </CardContent>
+        {jerseyPick ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+            <BibTile num={jerseyPick.riders.bib} size={30} />
+            <div>
+              <div style={{ fontWeight: 600 }}>{jerseyPick.riders.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+                {jerseyPick.riders.team ?? ''}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, opacity: 0.4 }}>
+            <BibTile num={null} size={30} />
+            <div style={{ fontSize: 13, color: 'var(--ink-mute)' }}>No pick</div>
+          </div>
+        )}
       </Card>
 
-      <SignOutButton />
+      {/* Account settings */}
+      <SectionHeading label="Account" />
+      <Card pad={0}>
+        {(
+          [
+            ['Display name', profile.display_name],
+            ['Email', profile.email ?? '—'],
+            ['Edition', edition.name],
+            ['Notifications', 'Email · 2h before lock'],
+          ] as [string, string][]
+        ).map(([k, v]) => (
+          <div
+            key={k}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '12px 14px',
+              borderBottom: '1px solid var(--hair)',
+            }}
+          >
+            <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>{k}</span>
+            <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{v}</span>
+          </div>
+        ))}
+        <div style={{ padding: '12px 14px' }}>
+          <SignOutButton />
+        </div>
+      </Card>
     </div>
   );
 }
