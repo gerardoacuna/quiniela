@@ -1,51 +1,37 @@
+import { redirect } from 'next/navigation';
 import { requireProfile } from '@/lib/auth/require-user';
-import { getLeaderboard } from '@/lib/queries/leaderboard';
+import { getActiveEdition } from '@/lib/queries/stages';
+import { createClient } from '@/lib/supabase/server';
+import { assignRanks } from '@/lib/scoring';
+import type { LeaderboardRow } from '@/lib/scoring';
+import { BoardClient } from './client';
 
 export default async function BoardPage() {
   const { user } = await requireProfile();
-  const rows = await getLeaderboard();
+  const edition = await getActiveEdition();
+  if (!edition) redirect('/home');
 
-  return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Leaderboard</h1>
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No players yet.</p>
-      ) : (
-        <div className="border rounded overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-2 py-2 text-left">#</th>
-                <th className="px-2 py-2 text-left">Player</th>
-                <th className="px-2 py-2 text-right">Total</th>
-                <th className="px-2 py-2 text-right hidden sm:table-cell">Stages</th>
-                <th className="px-2 py-2 text-right hidden sm:table-cell">GC</th>
-                <th className="px-2 py-2 text-right hidden sm:table-cell">Jersey</th>
-                <th className="px-2 py-2 text-right" title="Exact winner picks (tiebreaker)">★</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => {
-                const isSelf = r.user_id === user.id;
-                return (
-                  <tr
-                    key={r.user_id}
-                    className={`border-t ${isSelf ? 'bg-primary/5 font-semibold' : ''}`}
-                  >
-                    <td className="px-2 py-2">{r.rank}</td>
-                    <td className="px-2 py-2">{r.display_name}</td>
-                    <td className="px-2 py-2 text-right font-mono">{r.total_points}</td>
-                    <td className="px-2 py-2 text-right font-mono hidden sm:table-cell">{r.stage_points}</td>
-                    <td className="px-2 py-2 text-right font-mono hidden sm:table-cell">{r.gc_points}</td>
-                    <td className="px-2 py-2 text-right font-mono hidden sm:table-cell">{r.jersey_points}</td>
-                    <td className="px-2 py-2 text-right font-mono">{r.exact_winners_count}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
+  const supabase = await createClient();
+  const { data: rawRows } = await supabase
+    .from('leaderboard_view')
+    .select('*')
+    .eq('edition_id', edition.id);
+
+  // Coerce nullable Supabase types — filter out rows missing required fields
+  const rows: LeaderboardRow[] = (rawRows ?? [])
+    .filter((r) => r.user_id != null && r.edition_id != null && r.display_name != null)
+    .map((r) => ({
+      user_id: r.user_id as string,
+      display_name: r.display_name as string,
+      edition_id: r.edition_id as string,
+      stage_points: r.stage_points ?? 0,
+      gc_points: r.gc_points ?? 0,
+      jersey_points: r.jersey_points ?? 0,
+      total_points: r.total_points ?? 0,
+      exact_winners_count: r.exact_winners_count ?? 0,
+    }));
+
+  const ranked = assignRanks(rows);
+
+  return <BoardClient rows={ranked} currentUserId={user.id} />;
 }
