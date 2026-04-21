@@ -63,6 +63,7 @@ export interface MeData {
   jerseyPick: MeJerseyPick | null;
   results: MeResult[];
   totalPlayers: number;
+  countedStagesTotal: number;
 }
 
 export async function getMeData(userId: string): Promise<MeData | null> {
@@ -79,6 +80,7 @@ export async function getMeData(userId: string): Promise<MeData | null> {
     { data: jerseyRaw },
     { data: resultsRaw },
     { data: allBoardRaw },
+    { count: countedStagesTotal },
   ] = await Promise.all([
     supabase.from('profiles').select('display_name, email').eq('id', userId).single(),
     supabase
@@ -113,6 +115,11 @@ export async function getMeData(userId: string): Promise<MeData | null> {
       .from('leaderboard_view')
       .select('user_id, total_points, exact_winners_count, display_name, edition_id, stage_points, gc_points, jersey_points')
       .eq('edition_id', edition.id),
+    supabase
+      .from('stages')
+      .select('id', { count: 'exact', head: true })
+      .eq('edition_id', edition.id)
+      .eq('counts_for_scoring', true),
   ]);
 
   // Compute rank from full board
@@ -159,5 +166,6 @@ export async function getMeData(userId: string): Promise<MeData | null> {
     jerseyPick: (jerseyRaw ?? null) as unknown as MeJerseyPick | null,
     results: (resultsRaw ?? []) as MeResult[],
     totalPlayers: ranked.length,
+    countedStagesTotal: countedStagesTotal ?? 0,
   };
 }

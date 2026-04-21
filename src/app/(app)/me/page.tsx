@@ -25,7 +25,7 @@ export default async function MePage() {
     );
   }
 
-  const { edition, profile, rank, board, stagePicks, gcPicks, jerseyPick, results } = data;
+  const { edition, profile, rank, board, stagePicks, gcPicks, jerseyPick, results, countedStagesTotal } = data;
 
   // Scored stage picks — only stages that are published
   const scoredStagePicks = stagePicks
@@ -48,9 +48,10 @@ export default async function MePage() {
     })
     .sort((a, b) => a.stageN - b.stageN);
 
-  // Count of picks made across counted stages vs total
+  // "Made" stat: user picks on counted stages vs total counted stages in the edition.
+  // stage_picks can only reference stages flagged counts_for_scoring in the admin,
+  // so the length is the numerator; the total comes from the stages count query.
   const totalPicksMade = stagePicks.length;
-  const totalCountedStages = stagePicks.filter((p) => p.stages.status === 'published').length;
 
   const totalPoints = board?.total_points ?? 0;
   const exactWinners = board?.exact_winners_count ?? 0;
@@ -68,7 +69,7 @@ export default async function MePage() {
         <BigStat label="Rank" value={rank != null ? `#${rank}` : '—'} />
         <BigStat label="Points" value={totalPoints} mono />
         <BigStat label="Exact" value={exactWinners} mono />
-        <BigStat label="Made" value={`${totalPicksMade}/${totalCountedStages}`} mono />
+        <BigStat label="Made" value={`${totalPicksMade}/${countedStagesTotal}`} mono />
       </div>
 
       {/* Stage picks history */}
