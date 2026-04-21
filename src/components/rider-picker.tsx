@@ -1,8 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { RiderRow } from '@/components/design/rider-row';
 
 export interface PickerRider {
   id: string;
@@ -10,9 +8,9 @@ export interface PickerRider {
   team: string | null;
   bib: number | null;
   status: 'active' | 'dnf' | 'dns';
-  /** If set, shows "Stage N" and marks unpickable. */
+  /** If set, shows "Already picked — Stage N" and marks unpickable. */
   usedOnStageNumber?: number;
-  /** Custom reason to show instead of "Stage N" (e.g. "Another slot"). Implies unpickable. */
+  /** Custom reason to show instead of auto-generated hint. Implies unpickable. */
   disabledReason?: string;
 }
 
@@ -29,59 +27,82 @@ export function RiderPicker({
   disableUsed?: boolean;
   disableInactive?: boolean;
 }) {
-  const [query, setQuery] = useState('');
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return riders;
-    return riders.filter((r) =>
-      r.name.toLowerCase().includes(q) ||
-      (r.team ?? '').toLowerCase().includes(q) ||
-      (r.bib != null && String(r.bib).includes(q))
-    );
-  }, [riders, query]);
-
   return (
-    <div className="space-y-2">
-      <Input placeholder="Search name, team, bib…" value={query} onChange={(e) => setQuery(e.target.value)} />
-      <ul className="border rounded max-h-80 overflow-y-auto">
-        {filtered.map((r) => {
-          const disabled =
-            (disableInactive && r.status !== 'active') ||
-            (disableUsed && (r.usedOnStageNumber !== undefined || r.disabledReason !== undefined) && r.id !== selectedId);
-          const selected = r.id === selectedId;
-          return (
-            <li key={r.id} className="border-b last:border-b-0">
-              <button
-                type="button"
-                aria-label={r.name}
-                aria-pressed={selected}
-                disabled={disabled}
-                className={`w-full flex items-center justify-between px-3 py-2 text-left ${
-                  disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-muted'
-                } ${selected ? 'bg-primary/10' : ''}`}
-                onClick={() => !disabled && onSelect(r.id)}
-              >
-                <div>
-                  <div className="font-medium">{r.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {r.bib ? `#${r.bib} · ` : ''}{r.team ?? ''}
-                  </div>
-                </div>
-                <div className="text-xs">
-                  {r.status !== 'active' && <Badge variant="destructive" className="mr-1">{r.status.toUpperCase()}</Badge>}
-                  {r.id !== selectedId && r.disabledReason !== undefined && (
-                    <Badge variant="secondary">{r.disabledReason}</Badge>
-                  )}
-                  {r.id !== selectedId && r.disabledReason === undefined && r.usedOnStageNumber !== undefined && (
-                    <Badge variant="secondary">Stage {r.usedOnStageNumber}</Badge>
-                  )}
-                  {selected && <Badge>Selected</Badge>}
-                </div>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+    <ul
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--hair)',
+        borderRadius: 'var(--radius)',
+        overflow: 'hidden',
+        padding: 0,
+        listStyle: 'none',
+        margin: 0,
+      }}
+    >
+      {riders.length === 0 && (
+        <li
+          style={{
+            padding: 24,
+            textAlign: 'center',
+            color: 'var(--ink-mute)',
+            fontSize: 13,
+          }}
+        >
+          No riders match your search.
+        </li>
+      )}
+      {riders.map((r) => {
+        const disabled =
+          (disableInactive && r.status !== 'active') ||
+          (disableUsed &&
+            (r.usedOnStageNumber !== undefined || r.disabledReason !== undefined) &&
+            r.id !== selectedId);
+
+        const hint: string | null = r.id !== selectedId
+          ? r.disabledReason
+            ? r.disabledReason
+            : r.usedOnStageNumber !== undefined
+              ? `Already picked — Stage ${r.usedOnStageNumber}`
+              : r.status === 'dnf'
+                ? 'DNF'
+                : r.status === 'dns'
+                  ? 'DNS'
+                  : null
+          : null;
+
+        const checkmark =
+          selectedId === r.id ? (
+            <span
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 999,
+                background: 'var(--accent)',
+                color: 'var(--accent-ink)',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 13,
+                fontWeight: 700,
+                flex: 'none',
+              }}
+            >
+              ✓
+            </span>
+          ) : null;
+
+        return (
+          <li key={r.id}>
+            <RiderRow
+              rider={r}
+              selected={selectedId === r.id}
+              disabled={disabled}
+              hint={hint}
+              onClick={() => !disabled && onSelect(r.id)}
+              right={checkmark}
+            />
+          </li>
+        );
+      })}
+    </ul>
   );
 }
