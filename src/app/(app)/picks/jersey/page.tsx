@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requireProfile } from '@/lib/auth/require-user';
-import { getActiveEdition, getStageByNumber } from '@/lib/queries/stages';
-import { getUserJerseyPick } from '@/lib/queries/picks';
-import { listActiveRiders } from '@/lib/queries/riders';
+import { getActiveEdition } from '@/lib/queries/stages';
+import { createClient } from '@/lib/supabase/server';
 import { JerseyPickForm } from './form';
 
 export default async function JerseyPickPage() {
@@ -12,27 +11,45 @@ export default async function JerseyPickPage() {
   const edition = await getActiveEdition();
   if (!edition) redirect('/home');
 
-  const stage1 = await getStageByNumber(edition.id, 1);
-  if (stage1 && new Date(stage1.start_time).getTime() <= now) {
-    redirect('/picks');
-  }
-
-  const [riders, pick] = await Promise.all([
-    listActiveRiders(edition.id),
-    getUserJerseyPick(user.id, edition.id),
+  const supabase = await createClient();
+  const [{ data: stage1 }, { data: jerseyPick }, { data: riders }] = await Promise.all([
+    supabase.from('stages').select('start_time').eq('edition_id', edition.id).eq('number', 1).maybeSingle(),
+    supabase
+      .from('points_jersey_picks')
+      .select('rider_id, riders!inner(id, name, team, bib, status)')
+      .eq('user_id', user.id)
+      .eq('edition_id', edition.id)
+      .maybeSingle(),
+    supabase
+      .from('riders')
+      .select('id, name, team, bib, status')
+      .eq('edition_id', edition.id)
+      .eq('status', 'active')
+      .order('name'),
   ]);
+
+  const isLocked = stage1 ? new Date(stage1.start_time).getTime() <= now : false;
+
+  type JerseyRow = {
+    rider_id: string;
+    riders: { id: string; name: string; team: string | null; bib: number | null; status: 'active' | 'dnf' | 'dns' };
+  };
+  const castPick = jerseyPick as unknown as JerseyRow | null;
 
   return (
     <JerseyPickForm
       editionId={edition.id}
-      initialSelectedRiderId={pick?.rider_id ?? null}
-      riders={riders.map((r) => ({
-        id: r.id,
-        name: r.name,
-        team: r.team,
-        bib: r.bib,
-        status: r.status,
-      }))}
+      riders={
+        (riders ?? []) as Array<{
+          id: string;
+          name: string;
+          team: string | null;
+          bib: number | null;
+          status: 'active' | 'dnf' | 'dns';
+        }>
+      }
+      initialRider={castPick ? castPick.riders : null}
+      isLocked={isLocked}
     />
   );
 }

@@ -1,50 +1,172 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useActionState } from 'react';
-import { Button } from '@/components/ui/button';
-import { RiderPicker, type PickerRider } from '@/components/rider-picker';
 import { submitJerseyPick } from '@/lib/actions/picks';
+import { RiderPicker, type PickerRider } from '@/components/rider-picker';
+import { PageHeading } from '@/app/(app)/picks/page-heading';
+import { Badge } from '@/components/design/badge';
+import { Card } from '@/components/design/card';
+import { DsButton } from '@/components/design/button';
+import { BibTile } from '@/components/design/bib-tile';
 import type { ActionResult } from '@/lib/actions/result';
+
+type Rider = {
+  id: string;
+  name: string;
+  team: string | null;
+  bib: number | null;
+  status: 'active' | 'dnf' | 'dns';
+};
+
+// Small jersey glyph decoration (pink-tinted, from prototype screens.jsx:620-628)
+function JerseyGlyph() {
+  return (
+    <div
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 4,
+        background: '#9b1d4b',
+        position: 'relative',
+        border: '1px solid rgba(0,0,0,0.15)',
+        flex: 'none',
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          inset: 2,
+          border: '1px solid rgba(255,255,255,0.5)',
+          borderRadius: 2,
+        }}
+      />
+    </div>
+  );
+}
 
 export function JerseyPickForm({
   editionId,
-  initialSelectedRiderId,
-  riders,
+  riders: allRiders,
+  initialRider,
+  isLocked,
 }: {
   editionId: string;
-  initialSelectedRiderId: string | null;
-  riders: PickerRider[];
+  riders: Rider[];
+  initialRider: Rider | null;
+  isLocked: boolean;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedRiderId);
-  const [state, formAction, pending] = useActionState(
-    submitJerseyPick,
-    null as ActionResult | null,
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(initialRider?.id ?? null);
+  const [state, formAction, pending] = useActionState(submitJerseyPick, null as ActionResult | null);
+
+  const savedId = initialRider?.id ?? null;
+  const unchanged = selectedId === savedId;
+  const saveDisabled = isLocked || !selectedId || unchanged || pending;
+
+  const pickerRiders: PickerRider[] = allRiders;
+
+  const selectedRider = selectedId ? allRiders.find((r) => r.id === selectedId) ?? null : null;
 
   return (
-    <div className="p-4 space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Points jersey</h1>
-        <p className="text-sm text-muted-foreground">
-          Pick the rider you think will win the final points classification.
-          Locks when Stage 1 starts.
-        </p>
+    <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Back link */}
+      <Link
+        href="/picks"
+        style={{
+          background: 'none',
+          border: 'none',
+          color: 'var(--ink-soft)',
+          padding: '6px 0',
+          fontSize: 13,
+          cursor: 'pointer',
+          textDecoration: 'none',
+          display: 'inline-block',
+        }}
+      >
+        ← Picks
+      </Link>
+
+      <PageHeading
+        eyebrow="Pre-race"
+        title="Points jersey"
+        sub="30 pts if correct · 0 otherwise."
+      />
+
+      {/* Locked notice */}
+      {isLocked && (
+        <Card style={{ background: 'var(--surface-alt)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Badge tone="muted">Locked since Stage 1</Badge>
+            <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
+              Your picks are visible to other players.
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Current pick summary card */}
+      {selectedRider ? (
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <JerseyGlyph />
+            <BibTile num={selectedRider.bib} size={36} />
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{selectedRider.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+                {selectedRider.team ?? '—'}
+              </div>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <div
+          style={{
+            border: '1px dashed var(--hair)',
+            borderRadius: 'var(--radius)',
+            padding: 16,
+            textAlign: 'center',
+            color: 'var(--ink-mute)',
+            fontSize: 13,
+          }}
+        >
+          No rider selected yet
+        </div>
+      )}
+
+      {/* Rider picker */}
+      {!isLocked && (
+        <RiderPicker
+          riders={pickerRiders}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          disableInactive={true}
+          disableUsed={false}
+        />
+      )}
+
+      {/* Sticky save CTA */}
+      <div style={{ position: 'sticky', bottom: 16 }}>
+        <form action={formAction}>
+          <input type="hidden" name="editionId" value={editionId} />
+          <input type="hidden" name="riderId" value={selectedId ?? ''} />
+          <DsButton variant="accent" size="lg" full type="submit" disabled={saveDisabled}>
+            {pending ? 'Saving…' : 'Save jersey pick'}
+          </DsButton>
+        </form>
+
+        {state && (
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              color: state.ok ? 'var(--ok)' : 'var(--danger)',
+              textAlign: 'center',
+            }}
+          >
+            {state.ok ? 'Jersey pick saved.' : state.error}
+          </div>
+        )}
       </div>
-
-      <RiderPicker riders={riders} selectedId={selectedId} onSelect={setSelectedId} />
-
-      <form action={formAction}>
-        <input type="hidden" name="editionId" value={editionId} />
-        <input type="hidden" name="riderId" value={selectedId ?? ''} />
-        <Button type="submit" disabled={!selectedId || pending} className="w-full">
-          {pending ? 'Saving…' : 'Save pick'}
-        </Button>
-        {state && (state.ok ? (
-          <p className="text-sm text-green-600 mt-2">Jersey pick saved.</p>
-        ) : (
-          <p className="text-sm text-red-600 mt-2">{state.error}</p>
-        ))}
-      </form>
     </div>
   );
 }
