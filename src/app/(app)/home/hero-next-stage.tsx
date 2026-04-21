@@ -81,7 +81,7 @@ export function HeroNextStage({
           <h1 style={{
             margin: '4px 0 0',
             fontFamily: 'var(--font-display)',
-            fontWeight: 'var(--font-display-weight)' as React.CSSProperties['fontWeight'],
+            fontWeight: 'var(--display-weight)' as React.CSSProperties['fontWeight'],
             fontSize: 40,
             lineHeight: 1,
             letterSpacing: -0.6,

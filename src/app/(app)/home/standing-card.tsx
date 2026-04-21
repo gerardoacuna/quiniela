@@ -80,7 +80,7 @@ export function StandingCard({
       }}>
         <span style={{
           fontFamily: 'var(--font-display)',
-          fontWeight: 'var(--font-display-weight)' as React.CSSProperties['fontWeight'],
+          fontWeight: 'var(--display-weight)' as React.CSSProperties['fontWeight'],
           fontSize: 46,
           lineHeight: 1,
           color: 'var(--ink)',

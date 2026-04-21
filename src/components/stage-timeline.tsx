@@ -60,7 +60,7 @@ function TimelineCell({ stage, isCurrent }: { stage: TimelineStage; isCurrent: b
       </div>
       <div style={{
         fontFamily: 'var(--font-display)',
-        fontWeight: 'var(--font-display-weight)' as React.CSSProperties['fontWeight'],
+        fontWeight: 'var(--display-weight)' as React.CSSProperties['fontWeight'],
         fontStyle: 'var(--font-display-italic, normal)' as React.CSSProperties['fontStyle'],
         fontSize: 24,
         lineHeight: 1,

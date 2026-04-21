@@ -70,7 +70,7 @@ export function TopFiveCard({
           </div>
           <div style={{
             fontFamily: 'var(--font-display)',
-            fontWeight: 'var(--font-display-weight)' as React.CSSProperties['fontWeight'],
+            fontWeight: 'var(--display-weight)' as React.CSSProperties['fontWeight'],
             fontSize: 20,
             marginTop: 2,
           }}>
