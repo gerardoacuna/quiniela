@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Card } from '@/components/design/card';
 import { TeamChip } from '@/components/design/team-chip';
 import { BibTile } from '@/components/design/bib-tile';
+import { JerseyGlyph } from '@/components/design/jersey-glyph';
 
 export type GcPickRow = {
   position: number;
@@ -127,23 +128,7 @@ export function PreRaceCard({
             </Link>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-              {/* Pink jersey glyph */}
-              <div style={{
-                width: 22,
-                height: 22,
-                borderRadius: 4,
-                background: '#9b1d4b',
-                position: 'relative',
-                border: '1px solid rgba(0,0,0,0.15)',
-                flexShrink: 0,
-              }}>
-                <span style={{
-                  position: 'absolute',
-                  inset: 2,
-                  border: '1px solid rgba(255,255,255,0.5)',
-                  borderRadius: 2,
-                }} />
-              </div>
+              <JerseyGlyph />
               <BibTile num={jerseyPick.rider.bib} size={20} />
               <span style={{ fontSize: 13, fontWeight: 500 }}>{jerseyPick.rider.name}</span>
             </div>

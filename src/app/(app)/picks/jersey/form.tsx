@@ -9,6 +9,7 @@ import { Badge } from '@/components/design/badge';
 import { Card } from '@/components/design/card';
 import { DsButton } from '@/components/design/button';
 import { BibTile } from '@/components/design/bib-tile';
+import { JerseyGlyph } from '@/components/design/jersey-glyph';
 import type { ActionResult } from '@/lib/actions/result';
 
 type Rider = {
@@ -18,32 +19,6 @@ type Rider = {
   bib: number | null;
   status: 'active' | 'dnf' | 'dns';
 };
-
-// Small jersey glyph decoration (pink-tinted, from prototype screens.jsx:620-628)
-function JerseyGlyph() {
-  return (
-    <div
-      style={{
-        width: 22,
-        height: 22,
-        borderRadius: 4,
-        background: '#9b1d4b',
-        position: 'relative',
-        border: '1px solid rgba(0,0,0,0.15)',
-        flex: 'none',
-      }}
-    >
-      <span
-        style={{
-          position: 'absolute',
-          inset: 2,
-          border: '1px solid rgba(255,255,255,0.5)',
-          borderRadius: 2,
-        }}
-      />
-    </div>
-  );
-}
 
 export function JerseyPickForm({
   editionId,
