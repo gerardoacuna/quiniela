@@ -1,98 +1,146 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireProfile } from '@/lib/auth/require-user';
-import { getActiveEdition, listCountedStages } from '@/lib/queries/stages';
-import { getUserStagePicks, getUserGcPicks, getUserJerseyPick } from '@/lib/queries/picks';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { getPicksIndex } from '@/lib/queries/picks-index';
+import { PageHeading } from './page-heading';
+import { SectionHeading } from './section-heading';
+import { PreRaceStrip } from './pre-race-strip';
+import { UsedRidersStrip } from './used-riders-strip';
+import { StageRow } from './stage-row';
 
 export default async function PicksPage() {
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const { user } = await requireProfile();
-  const edition = await getActiveEdition();
-  if (!edition) redirect('/home');
+  const data = await getPicksIndex(user.id);
+  if (!data) redirect('/home');
 
-  const [stages, stagePicks, gcPicks, jerseyPick] = await Promise.all([
-    listCountedStages(edition.id),
-    getUserStagePicks(user.id, edition.id),
-    getUserGcPicks(user.id, edition.id),
-    getUserJerseyPick(user.id, edition.id),
-  ]);
+  const { stages, picks, results, gcPicks, jerseyPick } = data;
 
-  const picksByStage = new Map(stagePicks.map((p) => [p.stage_id, p]));
+  const countedStages = stages.filter((s) => s.counts_for_scoring);
+  const nonCountedCount = stages.length - countedStages.length;
 
+  // Build a map of picks by stage_id
+  type PickRow = (typeof picks)[number];
+  type StageRel = { number: number; status: string; double_points: boolean };
+  type RiderRel = { id: string; name: string; team: string | null; bib: number | null; status: string };
+
+  const picksByStage = new Map<
+    string,
+    { riderId: string; riderName: string; riderTeam: string | null; stageNumber: number }
+  >();
+  for (const p of picks) {
+    const pr = p as unknown as PickRow & { stages: StageRel; riders: RiderRel };
+    picksByStage.set(p.stage_id, {
+      riderId: p.rider_id,
+      riderName: pr.riders.name,
+      riderTeam: pr.riders.team,
+      stageNumber: pr.stages.number,
+    });
+  }
+
+  // Build map of results by stage_id
+  const resultsByStage = new Map<string, { position: number; riderId: string }>();
+  for (const r of results) {
+    resultsByStage.set(r.stage_id, { position: r.position, riderId: r.rider_id });
+  }
+
+  // Find stage 1 to determine lock
   const stage1 = stages.find((s) => s.number === 1);
-  const stage1Locked = stage1 ? new Date(stage1.start_time).getTime() <= now : false;
+  const preRaceLocked = stage1 ? new Date(stage1.start_time).getTime() <= now : false;
+
+  // Picks made count (on counted non-cancelled stages)
+  const picksMade = countedStages.filter((s) => s.status !== 'cancelled' && picksByStage.has(s.id)).length;
+
+  // Needed = counted stages with future start_time and no pick
+  const openNeeded = countedStages.filter((s) => {
+    if (s.status === 'cancelled') return false;
+    const futureStage = new Date(s.start_time).getTime() > now;
+    return futureStage && !picksByStage.has(s.id);
+  }).length;
+
+  // Build a set of counted non-cancelled stage IDs for quick lookup
+  const countedNonCancelledIds = new Set(
+    countedStages.filter((s) => s.status !== 'cancelled').map((s) => s.id),
+  );
+
+  // Used riders strip — riders used on counted, non-cancelled stages
+  const usedEntries = Array.from(picksByStage.entries())
+    .filter(([stageId]) => countedNonCancelledIds.has(stageId))
+    .map(([, p]) => ({
+      riderId: p.riderId,
+      lastName: p.riderName.split(' ').slice(-1)[0] ?? p.riderName,
+      team: p.riderTeam,
+      stageNumber: p.stageNumber,
+    }))
+    .sort((a, b) => a.stageNumber - b.stageNumber);
+
+  // Find the next counted stage (first one with start_time > now and not cancelled)
+  const nextStage = countedStages.find(
+    (s) => s.status !== 'cancelled' && new Date(s.start_time).getTime() > now,
+  );
+
+  // Type cast for gc/jersey picks
+  type GcPickRow = (typeof gcPicks)[number] & { riders: { id: string; name: string; team: string | null; bib: number | null } };
+  type JerseyPickRow = typeof jerseyPick & { riders: { id: string; name: string; team: string | null; bib: number | null } };
+
+  const gcPicksCast = gcPicks as unknown as GcPickRow[];
+  const jerseyPickCast = jerseyPick as unknown as JerseyPickRow | null;
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Picks</h1>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 16px' }}>
+      <PageHeading
+        eyebrow="Your picks"
+        title="Picks"
+        sub={`${picksMade}/${countedStages.length} picks made · ${openNeeded} counted stages still open.`}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>GC top 3</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            {gcPicks.length === 3 ? 'Picks saved.' : stage1Locked ? 'Locked.' : 'Not picked yet.'}
-          </span>
-          {!stage1Locked && (
-            <Link href="/picks/gc" className="text-primary underline text-sm">
-              {gcPicks.length === 3 ? 'Edit' : 'Pick'}
-            </Link>
-          )}
-        </CardContent>
-      </Card>
+      <PreRaceStrip
+        gcPicks={gcPicksCast}
+        jerseyPick={jerseyPickCast}
+        locked={preRaceLocked}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Points jersey</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            {jerseyPick ? 'Pick saved.' : stage1Locked ? 'Locked.' : 'Not picked yet.'}
-          </span>
-          {!stage1Locked && (
-            <Link href="/picks/jersey" className="text-primary underline text-sm">
-              {jerseyPick ? 'Edit' : 'Pick'}
-            </Link>
-          )}
-        </CardContent>
-      </Card>
+      <UsedRidersStrip
+        entries={usedEntries}
+        totalCountedStages={countedStages.length}
+      />
 
-      <h2 className="text-lg font-semibold pt-4">Stages</h2>
-      <ul className="space-y-2">
-        {stages.map((s) => {
-          const pick = picksByStage.get(s.id);
-          const locked = new Date(s.start_time).getTime() <= now;
-          const published = s.status === 'published';
-          return (
-            <li key={s.id}>
-              <Link
-                href={locked ? `/stage/${s.number}` : `/picks/stage/${s.number}`}
-                className="flex items-center justify-between border rounded px-4 py-3 hover:bg-muted"
-              >
-                <div>
-                  <span className="font-medium">Stage {s.number}</span>
-                  {s.double_points && <Badge className="ml-2" variant="secondary">2×</Badge>}
-                </div>
-                <div className="text-sm">
-                  {published ? (
-                    <Badge>Scored</Badge>
-                  ) : locked ? (
-                    <Badge variant="secondary">Locked</Badge>
-                  ) : pick ? (
-                    <Badge variant="outline">Picked</Badge>
-                  ) : (
-                    <Badge variant="destructive">Pick</Badge>
-                  )}
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <div>
+        <SectionHeading label="Counted stages" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+          {countedStages.map((s) => {
+            const locked = new Date(s.start_time).getTime() <= now;
+            const pick = picksByStage.get(s.id);
+            const result = resultsByStage.get(s.id);
+
+            // Only show position result if we have a pick for this stage
+            const relevantResult =
+              result && pick && result.riderId === pick.riderId ? result : null;
+
+            return (
+              <StageRow
+                key={s.id}
+                number={s.number}
+                startTime={s.start_time}
+                terrain={s.terrain ?? 'flat'}
+                km={s.km}
+                doublePoints={s.double_points}
+                status={s.status}
+                locked={locked}
+                isNext={nextStage?.id === s.id}
+                pick={pick ?? null}
+                result={relevantResult ?? null}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      {nonCountedCount > 0 && (
+        <div style={{ fontSize: 12, color: 'var(--ink-mute)', padding: '4px 2px' }}>
+          + {nonCountedCount} other stage{nonCountedCount !== 1 ? 's' : ''} in this edition are not counted for scoring.
+        </div>
+      )}
     </div>
   );
 }
