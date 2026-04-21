@@ -46,6 +46,8 @@ export default async function StagePickPage({
     <StagePickForm
       stageId={stage.id}
       stageNumber={stage.number}
+      terrain={stage.terrain ?? 'flat'}
+      km={stage.km}
       doublePoints={stage.double_points}
       startTimeIso={stage.start_time}
       initialSelectedRiderId={currentPickForThisStage?.rider_id ?? null}
