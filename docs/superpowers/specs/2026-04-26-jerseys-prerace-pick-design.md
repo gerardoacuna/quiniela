@@ -19,7 +19,14 @@ The goal: a single combined `/picks/jerseys` page that handles both pre-race jer
 
 ## Data model
 
-### New migration: `supabase/migrations/20260427000001_jersey_picks.sql`
+### Migrations (split in two so the new enum value commits before it's referenced)
+
+`supabase/migrations/20260427000001_classification_kind_white_jersey.sql`:
+```sql
+alter type public.classification_kind add value 'white_jersey';
+```
+
+`supabase/migrations/20260427000002_jersey_picks.sql`:
 
 ```sql
 create type public.jersey_kind as enum ('points', 'white');
@@ -36,8 +43,6 @@ create table public.jersey_picks (
 create trigger jersey_picks_set_updated_at
   before update on public.jersey_picks
   for each row execute function public.tg_set_updated_at();
-
-alter type public.classification_kind add value 'white_jersey';
 
 -- Extend the position check on final_classifications so white_jersey rows
 -- with position = 1 are valid. The existing constraint only whitelists 'gc'
