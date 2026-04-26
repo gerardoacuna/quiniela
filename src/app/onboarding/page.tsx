@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { Card } from '@/components/design/card'
+import { Logo } from '@/components/design/logo'
 import OnboardingForm from './form'
 
 export default async function OnboardingPage() {
@@ -10,7 +12,6 @@ export default async function OnboardingPage() {
 
   if (!user) redirect('/sign-in')
 
-  // If a valid profile already exists, skip onboarding
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, deleted_at')
@@ -22,15 +23,83 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Welcome!</h1>
-          <p className="text-sm text-gray-500">
-            Choose a display name to finish setting up your account.
-          </p>
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 24,
+        background: 'var(--bg)',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 380,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 18,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <Logo size={44} />
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              lineHeight: 1,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 600,
+                fontSize: 22,
+                color: 'var(--ink)',
+                letterSpacing: -0.3,
+              }}
+            >
+              Quiniela
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: 'var(--ink-mute)',
+                letterSpacing: 1,
+                marginTop: 4,
+              }}
+            >
+              GIRO · MMXXVI
+            </span>
+          </div>
         </div>
-        <OnboardingForm />
+
+        <Card pad={28} style={{ width: '100%' }}>
+          <OnboardingForm />
+        </Card>
+
+        <p
+          style={{
+            margin: 0,
+            fontSize: 11,
+            color: 'var(--ink-mute)',
+            fontFamily: 'var(--font-mono)',
+            textAlign: 'center',
+            letterSpacing: 0.4,
+          }}
+        >
+          Private Giro 2026 pickem · invite-only
+        </p>
       </div>
     </main>
   )
