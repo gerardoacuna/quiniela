@@ -253,6 +253,66 @@ export type Database = {
           },
         ]
       }
+      jersey_picks: {
+        Row: {
+          edition_id: string
+          kind: Database["public"]["Enums"]["jersey_kind"]
+          rider_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          edition_id: string
+          kind: Database["public"]["Enums"]["jersey_kind"]
+          rider_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          edition_id?: string
+          kind?: Database["public"]["Enums"]["jersey_kind"]
+          rider_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jersey_picks_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jersey_picks_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_view"
+            referencedColumns: ["edition_id"]
+          },
+          {
+            foreignKeyName: "jersey_picks_rider_id_fkey"
+            columns: ["rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jersey_picks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "jersey_picks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pick_reminders_sent: {
         Row: {
           sent_at: string
@@ -286,63 +346,6 @@ export type Database = {
           },
           {
             foreignKeyName: "pick_reminders_sent_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      points_jersey_picks: {
-        Row: {
-          edition_id: string
-          rider_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          edition_id: string
-          rider_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          edition_id?: string
-          rider_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "points_jersey_picks_edition_id_fkey"
-            columns: ["edition_id"]
-            isOneToOne: false
-            referencedRelation: "editions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "points_jersey_picks_edition_id_fkey"
-            columns: ["edition_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_view"
-            referencedColumns: ["edition_id"]
-          },
-          {
-            foreignKeyName: "points_jersey_picks_rider_id_fkey"
-            columns: ["rider_id"]
-            isOneToOne: false
-            referencedRelation: "riders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "points_jersey_picks_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_view"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "points_jersey_picks_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -619,7 +622,8 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      classification_kind: "gc" | "points_jersey"
+      classification_kind: "gc" | "points_jersey" | "white_jersey"
+      jersey_kind: "points" | "white"
       result_status: "draft" | "published"
       rider_status: "active" | "dnf" | "dns"
       stage_status:
@@ -757,7 +761,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      classification_kind: ["gc", "points_jersey"],
+      classification_kind: ["gc", "points_jersey", "white_jersey"],
+      jersey_kind: ["points", "white"],
       result_status: ["draft", "published"],
       rider_status: ["active", "dnf", "dns"],
       stage_status: [
