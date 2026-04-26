@@ -18,7 +18,8 @@ export default async function HomePage() {
   const data = await getHomeData(user.id);
   if (!data) redirect('/sign-in');
 
-  const { stages, picks, results, board } = data;
+  const { picks, results, board } = data;
+  const stages = data.stages.filter((s) => s.counts_for_scoring);
 
   // Determine the "current" / next stage to act on:
   // Prefer the first stage that is 'upcoming' or 'locked' (i.e. not yet published/cancelled)
