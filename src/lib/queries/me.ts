@@ -37,6 +37,7 @@ export interface MeGcPick {
 }
 
 export interface MeJerseyPick {
+  kind: 'points' | 'white';
   rider_id: string;
   riders: {
     id: string;
@@ -60,7 +61,7 @@ export interface MeData {
   board: LeaderboardRow & { rank: number } | null;
   stagePicks: MeStagePick[];
   gcPicks: MeGcPick[];
-  jerseyPick: MeJerseyPick | null;
+  jerseyPicks: MeJerseyPick[];
   results: MeResult[];
   totalPlayers: number;
   countedStagesTotal: number;
@@ -103,11 +104,9 @@ export async function getMeData(userId: string): Promise<MeData | null> {
       .order('position'),
     supabase
       .from('jersey_picks')
-      .select('rider_id, riders!inner(id, name, team, bib, status)')
+      .select('kind, rider_id, riders!inner(id, name, team, bib, status)')
       .eq('user_id', userId)
-      .eq('edition_id', edition.id)
-      .eq('kind', 'points')
-      .maybeSingle(),
+      .eq('edition_id', edition.id),
     supabase
       .from('stage_results')
       .select('stage_id, position, rider_id')
@@ -164,7 +163,7 @@ export async function getMeData(userId: string): Promise<MeData | null> {
     board,
     stagePicks: (stagePicksRaw ?? []) as unknown as MeStagePick[],
     gcPicks: (gcPicksRaw ?? []) as unknown as MeGcPick[],
-    jerseyPick: (jerseyRaw ?? null) as unknown as MeJerseyPick | null,
+    jerseyPicks: (jerseyRaw ?? []) as unknown as MeJerseyPick[],
     results: (resultsRaw ?? []) as MeResult[],
     totalPlayers: ranked.length,
     countedStagesTotal: countedStagesTotal ?? 0,

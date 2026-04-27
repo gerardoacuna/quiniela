@@ -25,7 +25,7 @@ export default async function MePage() {
     );
   }
 
-  const { edition, profile, rank, board, stagePicks, gcPicks, jerseyPick, results, countedStagesTotal } = data;
+  const { edition, profile, rank, board, stagePicks, gcPicks, jerseyPicks, results, countedStagesTotal } = data;
 
   // Scored stage picks — only stages that are published
   const scoredStagePicks = stagePicks
@@ -204,34 +204,43 @@ export default async function MePage() {
 
         <div style={{ height: 1, background: 'var(--hair)', margin: '14px 0' }} />
 
-        <div
-          style={{
-            fontSize: 11,
-            color: 'var(--ink-mute)',
-            fontFamily: 'var(--font-mono)',
-            letterSpacing: 1,
-            textTransform: 'uppercase',
-          }}
-        >
-          Points jersey
-        </div>
-
-        {jerseyPick ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-            <BibTile num={jerseyPick.riders.bib} size={30} />
-            <div>
-              <div style={{ fontWeight: 600 }}>{jerseyPick.riders.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
-                {jerseyPick.riders.team ?? ''}
+        {(['points', 'white'] as const).map((kind) => {
+          const pick = jerseyPicks.find((j) => j.kind === kind) ?? null;
+          const label = kind === 'points' ? 'Points jersey' : 'White jersey';
+          return (
+            <div key={kind}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--ink-mute)',
+                  fontFamily: 'var(--font-mono)',
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  marginTop: kind === 'white' ? 14 : 0,
+                }}
+              >
+                {label}
               </div>
+
+              {pick ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                  <BibTile num={pick.riders.bib} size={30} />
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{pick.riders.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+                      {pick.riders.team ?? ''}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, opacity: 0.4 }}>
+                  <BibTile num={null} size={30} />
+                  <div style={{ fontSize: 13, color: 'var(--ink-mute)' }}>No pick</div>
+                </div>
+              )}
             </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, opacity: 0.4 }}>
-            <BibTile num={null} size={30} />
-            <div style={{ fontSize: 13, color: 'var(--ink-mute)' }}>No pick</div>
-          </div>
-        )}
+          );
+        })}
       </Card>
 
       {/* Account settings */}
