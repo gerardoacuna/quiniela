@@ -35,10 +35,11 @@ export async function getPicksIndex(userId: string) {
       .eq('edition_id', edition.id)
       .order('position'),
     supabase
-      .from('points_jersey_picks')
+      .from('jersey_picks')
       .select('rider_id, riders!inner(id, name, team, bib)')
       .eq('user_id', userId)
       .eq('edition_id', edition.id)
+      .eq('kind', 'points')
       .maybeSingle(),
   ]);
 

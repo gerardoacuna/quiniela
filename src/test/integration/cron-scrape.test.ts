@@ -37,7 +37,7 @@ d('scrapeAndPersist integration', () => {
     await admin.from('stage_picks').delete().in('stage_id', stageIds);
     await admin.from('stage_results').delete().in('stage_id', stageIds);
     await admin.from('gc_picks').delete().eq('edition_id', EDITION_ID);
-    await admin.from('points_jersey_picks').delete().eq('edition_id', EDITION_ID);
+    await admin.from('jersey_picks').delete().eq('edition_id', EDITION_ID);
     await admin.from('final_classifications').delete().eq('edition_id', EDITION_ID);
     await admin.from('riders').delete().eq('edition_id', EDITION_ID);
     await admin.from('scrape_errors').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -61,7 +61,7 @@ d('scrapeAndPersist integration', () => {
     await admin.from('stage_picks').delete().in('stage_id', stageIds);
     await admin.from('stage_results').delete().in('stage_id', stageIds);
     await admin.from('gc_picks').delete().eq('edition_id', EDITION_ID);
-    await admin.from('points_jersey_picks').delete().eq('edition_id', EDITION_ID);
+    await admin.from('jersey_picks').delete().eq('edition_id', EDITION_ID);
     await admin.from('final_classifications').delete().eq('edition_id', EDITION_ID);
     await admin.from('riders').delete().eq('edition_id', EDITION_ID);
     await admin.from('scrape_errors').delete().neq('id', '00000000-0000-0000-0000-000000000000');

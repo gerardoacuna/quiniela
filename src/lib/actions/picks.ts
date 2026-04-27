@@ -194,10 +194,11 @@ export async function submitJerseyPickCore(
   if (rider.status !== 'active') return { ok: false, error: 'rider_not_active' };
 
   const { error } = await supabase
-    .from('points_jersey_picks')
-    .upsert({ user_id: userId, edition_id: input.editionId, rider_id: input.riderId }, {
-      onConflict: 'user_id,edition_id',
-    });
+    .from('jersey_picks')
+    .upsert(
+      { user_id: userId, edition_id: input.editionId, kind: 'points', rider_id: input.riderId },
+      { onConflict: 'user_id,edition_id,kind' },
+    );
   if (error) return { ok: false, error: error.message };
 
   return { ok: true, data: undefined };

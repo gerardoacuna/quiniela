@@ -34,9 +34,9 @@ d('publishFinalCore (admin)', () => {
       { user_id: player.userId, edition_id: EDITION, position: 3, rider_id: R_EVE },
     ]);
     // Player's jersey pick → Roglic (matches publish).
-    await a.from('points_jersey_picks').delete().eq('user_id', player.userId);
-    await a.from('points_jersey_picks').insert({
-      user_id: player.userId, edition_id: EDITION, rider_id: R_ROG,
+    await a.from('jersey_picks').delete().eq('user_id', player.userId);
+    await a.from('jersey_picks').insert({
+      user_id: player.userId, edition_id: EDITION, kind: 'points', rider_id: R_ROG,
     });
     await a.from('final_classifications').delete().eq('edition_id', EDITION);
   });
@@ -45,7 +45,7 @@ d('publishFinalCore (admin)', () => {
     const a = createAdminClient();
     await a.from('final_classifications').delete().eq('edition_id', EDITION);
     await a.from('gc_picks').delete().eq('user_id', player.userId);
-    await a.from('points_jersey_picks').delete().eq('user_id', player.userId);
+    await a.from('jersey_picks').delete().eq('user_id', player.userId);
     // Restore Stage 1 to seeded state (past + published).
     await a.from('stages').update({
       start_time: new Date(Date.now() - 86400_000).toISOString(),
@@ -78,7 +78,7 @@ d('publishFinalCore (admin)', () => {
 
     const a = createAdminClient();
     const { data } = await a.from('leaderboard_view').select('*').eq('user_id', player.userId);
-    expect(data?.[0]?.jersey_points).toBe(30);
+    expect(data?.[0]?.jersey_points).toBe(50);
   });
 
   it('rejects duplicate riders in GC', async () => {

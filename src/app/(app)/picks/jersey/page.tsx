@@ -15,10 +15,11 @@ export default async function JerseyPickPage() {
   const [{ data: stage1 }, { data: jerseyPick }, { data: riders }] = await Promise.all([
     supabase.from('stages').select('start_time').eq('edition_id', edition.id).eq('number', 1).maybeSingle(),
     supabase
-      .from('points_jersey_picks')
+      .from('jersey_picks')
       .select('rider_id, riders!inner(id, name, team, bib, status)')
       .eq('user_id', user.id)
       .eq('edition_id', edition.id)
+      .eq('kind', 'points')
       .maybeSingle(),
     supabase
       .from('riders')

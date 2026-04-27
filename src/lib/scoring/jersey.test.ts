@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { jerseyPoints } from './jersey';
+import { jerseyPoints, JERSEY_POINTS } from './jersey';
 
 describe('jerseyPoints', () => {
-  it('returns 30 when pick matches actual winner', () => {
-    expect(jerseyPoints({ rider_id: 'pogacar' }, 'pogacar')).toBe(30);
+  it('exports the points constant as 50', () => {
+    expect(JERSEY_POINTS).toBe(50);
+  });
+
+  it('returns 50 when pick matches actual winner', () => {
+    expect(jerseyPoints({ rider_id: 'pogacar' }, 'pogacar')).toBe(50);
   });
 
   it('returns 0 when pick differs', () => {

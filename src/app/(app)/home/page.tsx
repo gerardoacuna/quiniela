@@ -110,10 +110,11 @@ export default async function HomePage() {
       .eq('edition_id', data.edition.id)
       .order('position'),
     supabase
-      .from('points_jersey_picks')
+      .from('jersey_picks')
       .select('rider_id, riders!inner(id, name, team, bib)')
       .eq('user_id', user.id)
       .eq('edition_id', data.edition.id)
+      .eq('kind', 'points')
       .maybeSingle(),
   ]);
 

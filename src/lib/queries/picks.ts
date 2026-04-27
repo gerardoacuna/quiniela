@@ -27,10 +27,11 @@ export async function getUserGcPicks(userId: string, editionId: string) {
 export async function getUserJerseyPick(userId: string, editionId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from('points_jersey_picks')
+    .from('jersey_picks')
     .select('*')
     .eq('user_id', userId)
     .eq('edition_id', editionId)
+    .eq('kind', 'points')
     .maybeSingle();
   if (error) throw error;
   return data;
