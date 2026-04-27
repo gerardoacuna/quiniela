@@ -11,7 +11,7 @@ import { TopFiveCard } from './top-five-card';
 import { PreRaceCard } from './pre-race-card';
 import type { TimelineStage } from '@/components/stage-timeline';
 import type { RecentPick } from './recent-picks-card';
-import type { GcPickRow, JerseyPickRow } from './pre-race-card';
+import type { GcPickRow, JerseyPickRows } from './pre-race-card';
 
 export default async function HomePage() {
   const { user } = await requireProfile();
@@ -102,7 +102,7 @@ export default async function HomePage() {
   // GC picks and Jersey pick (fetched here to avoid another query file)
   const supabase = await createClient();
 
-  const [{ data: gcPicksRaw }, { data: jerseyRaw }] = await Promise.all([
+  const [{ data: gcPicksRaw }, { data: jerseyPicksRaw }] = await Promise.all([
     supabase
       .from('gc_picks')
       .select('position, rider_id, riders!inner(id, name, team, bib)')
@@ -111,11 +111,9 @@ export default async function HomePage() {
       .order('position'),
     supabase
       .from('jersey_picks')
-      .select('rider_id, riders!inner(id, name, team, bib)')
+      .select('kind, rider_id, riders!inner(id, name, team, bib)')
       .eq('user_id', user.id)
-      .eq('edition_id', data.edition.id)
-      .eq('kind', 'points')
-      .maybeSingle(),
+      .eq('edition_id', data.edition.id),
   ]);
 
   const gcPicks: GcPickRow[] = (gcPicksRaw ?? []).map((g) => ({
@@ -123,11 +121,14 @@ export default async function HomePage() {
     rider: g.riders as { id: string; name: string; team: string | null; bib: number | null },
   }));
 
-  const jerseyPick: JerseyPickRow = jerseyRaw
-    ? {
-        rider: jerseyRaw.riders as { id: string; name: string; team: string | null; bib: number | null },
-      }
-    : null;
+  type RawJerseyRow = { kind: 'points' | 'white'; riders: { id: string; name: string; team: string | null; bib: number | null } };
+  const jerseyRows = (jerseyPicksRaw ?? []) as unknown as RawJerseyRow[];
+  const pointsRow = jerseyRows.find((r) => r.kind === 'points');
+  const whiteRow  = jerseyRows.find((r) => r.kind === 'white');
+  const jerseyPicks: JerseyPickRows = {
+    points: pointsRow ? { rider: pointsRow.riders } : null,
+    white:  whiteRow  ? { rider: whiteRow.riders }  : null,
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: '0 16px' }}>
@@ -160,7 +161,7 @@ export default async function HomePage() {
 
       <TopFiveCard rows={board.slice(0, 5)} around={aroundMe} me={me} />
 
-      <PreRaceCard gcPicks={gcPicks} jerseyPick={jerseyPick} />
+      <PreRaceCard gcPicks={gcPicks} jerseyPicks={jerseyPicks} />
     </div>
   );
 }

@@ -23,12 +23,53 @@ export type JerseyPickRow = {
   };
 } | null;
 
+export type JerseyPickRows = {
+  points: JerseyPickRow;
+  white: JerseyPickRow;
+};
+
+function JerseyRow({ kind, label, pick }: { kind: 'points' | 'white'; label: string; pick: JerseyPickRow }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{
+        fontSize: 11,
+        color: 'var(--ink-mute)',
+        fontFamily: 'var(--font-mono)',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+      }}>
+        {label}
+      </div>
+      {!pick ? (
+        <Link href="/picks/jerseys" style={{
+          fontSize: 12,
+          color: 'var(--accent)',
+          textDecoration: 'underline',
+          border: '1px dashed var(--hair)',
+          padding: '6px 8px',
+          borderRadius: 4,
+          display: 'block',
+          textAlign: 'center',
+        }}>
+          Not picked
+        </Link>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <JerseyGlyph kind={kind} size={16} />
+          <BibTile num={pick.rider.bib} size={20} />
+          <span style={{ fontSize: 13, fontWeight: 500 }}>{pick.rider.name}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PreRaceCard({
   gcPicks,
-  jerseyPick,
+  jerseyPicks,
 }: {
   gcPicks: GcPickRow[];
-  jerseyPick: JerseyPickRow;
+  jerseyPicks: JerseyPickRows;
 }) {
   return (
     <Card pad={0}>
@@ -43,7 +84,7 @@ export function PreRaceCard({
           Pre-race picks · locked
         </div>
         <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 2 }}>
-          Scored after the final GC is published.
+          Scored after the final classifications are published.
         </div>
       </div>
       <div style={{
@@ -52,7 +93,6 @@ export function PreRaceCard({
         gap: 0,
         borderTop: '1px solid var(--hair)',
       }}>
-        {/* GC Top 3 */}
         <div style={{ padding: '12px 16px', borderRight: '1px solid var(--hair)' }}>
           <div style={{
             fontSize: 11,
@@ -101,38 +141,9 @@ export function PreRaceCard({
           )}
         </div>
 
-        {/* Points jersey */}
-        <div style={{ padding: '12px 16px' }}>
-          <div style={{
-            fontSize: 11,
-            color: 'var(--ink-mute)',
-            fontFamily: 'var(--font-mono)',
-            letterSpacing: 1,
-            textTransform: 'uppercase',
-          }}>
-            Points jersey
-          </div>
-          {!jerseyPick ? (
-            <Link href="/picks/jersey" style={{
-              fontSize: 12,
-              color: 'var(--accent)',
-              textDecoration: 'underline',
-              border: '1px dashed var(--hair)',
-              padding: '6px 8px',
-              borderRadius: 4,
-              display: 'block',
-              textAlign: 'center',
-              marginTop: 8,
-            }}>
-              No jersey pick
-            </Link>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-              <JerseyGlyph />
-              <BibTile num={jerseyPick.rider.bib} size={20} />
-              <span style={{ fontSize: 13, fontWeight: 500 }}>{jerseyPick.rider.name}</span>
-            </div>
-          )}
+        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <JerseyRow kind="points" label="Points jersey" pick={jerseyPicks.points} />
+          <JerseyRow kind="white"  label="White jersey"  pick={jerseyPicks.white} />
         </div>
       </div>
     </Card>

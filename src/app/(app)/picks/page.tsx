@@ -14,7 +14,7 @@ export default async function PicksPage() {
   const data = await getPicksIndex(user.id);
   if (!data) redirect('/home');
 
-  const { stages, picks, results, gcPicks, jerseyPick } = data;
+  const { stages, picks, results, gcPicks, jerseyPicks } = data;
 
   const countedStages = stages.filter((s) => s.counts_for_scoring);
   const nonCountedCount = stages.length - countedStages.length;
@@ -81,10 +81,10 @@ export default async function PicksPage() {
 
   // Type cast for gc/jersey picks
   type GcPickRow = (typeof gcPicks)[number] & { riders: { id: string; name: string; team: string | null; bib: number | null } };
-  type JerseyPickRow = typeof jerseyPick & { riders: { id: string; name: string; team: string | null; bib: number | null } };
+  type JerseyPickRowEntry = { kind: 'points' | 'white'; rider_id: string; riders: { id: string; name: string; team: string | null; bib: number | null } };
 
   const gcPicksCast = gcPicks as unknown as GcPickRow[];
-  const jerseyPickCast = jerseyPick as unknown as JerseyPickRow | null;
+  const jerseyPicksCast = jerseyPicks as unknown as JerseyPickRowEntry[];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 16px' }}>
@@ -96,7 +96,7 @@ export default async function PicksPage() {
 
       <PreRaceStrip
         gcPicks={gcPicksCast}
-        jerseyPick={jerseyPickCast}
+        jerseyPicks={jerseyPicksCast}
         locked={preRaceLocked}
       />
 

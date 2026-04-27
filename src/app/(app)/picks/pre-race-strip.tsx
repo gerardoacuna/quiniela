@@ -17,17 +17,24 @@ interface JerseyPickRider {
   bib: number | null;
 }
 
+export interface JerseyPickEntry {
+  kind: 'points' | 'white';
+  riders: JerseyPickRider;
+}
+
 export function PreRaceStrip({
   gcPicks,
-  jerseyPick,
+  jerseyPicks,
   locked,
 }: {
   gcPicks: Array<{ position: number; rider_id: string; riders: GcPickRider }>;
-  jerseyPick: { rider_id: string; riders: JerseyPickRider } | null;
+  jerseyPicks: JerseyPickEntry[];
   locked: boolean;
 }) {
+  const points = jerseyPicks.find((j) => j.kind === 'points') ?? null;
+  const white  = jerseyPicks.find((j) => j.kind === 'white') ?? null;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
       {/* GC Top 3 card */}
       <MiniPickCard label="GC Top 3" locked={locked} href={locked ? undefined : '/picks/gc'}>
         {gcPicks.length > 0 ? (
@@ -65,17 +72,36 @@ export function PreRaceStrip({
         )}
       </MiniPickCard>
 
-      {/* Points jersey card */}
-      <MiniPickCard label="Points jersey" locked={locked} href={locked ? undefined : '/picks/jersey'}>
-        {jerseyPick ? (
+      <MiniPickCard label="Points jersey" locked={locked} href={locked ? undefined : '/picks/jerseys'}>
+        {points ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            <BibTile num={jerseyPick.riders.bib} size={26} />
+            <BibTile num={points.riders.bib} size={26} />
             <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2, minWidth: 0 }}>
               <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {jerseyPick.riders.name}
+                {points.riders.name}
               </div>
               <div style={{ fontSize: 10, color: 'var(--ink-soft)', fontWeight: 400 }}>
-                {resolveTeam(jerseyPick.riders.team).name}
+                {resolveTeam(points.riders.team).name}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 8 }}>
+            Not picked yet
+          </div>
+        )}
+      </MiniPickCard>
+
+      <MiniPickCard label="White jersey" locked={locked} href={locked ? undefined : '/picks/jerseys'}>
+        {white ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <BibTile num={white.riders.bib} size={26} />
+            <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2, minWidth: 0 }}>
+              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {white.riders.name}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--ink-soft)', fontWeight: 400 }}>
+                {resolveTeam(white.riders.team).name}
               </div>
             </div>
           </div>

@@ -13,7 +13,7 @@ export async function getPicksIndex(userId: string) {
     { data: picks },
     { data: results },
     { data: gcPicks },
-    { data: jerseyPick },
+    { data: jerseyPicksRaw },
   ] = await Promise.all([
     supabase
       .from('stages')
@@ -36,11 +36,9 @@ export async function getPicksIndex(userId: string) {
       .order('position'),
     supabase
       .from('jersey_picks')
-      .select('rider_id, riders!inner(id, name, team, bib)')
+      .select('kind, rider_id, riders!inner(id, name, team, bib)')
       .eq('user_id', userId)
-      .eq('edition_id', edition.id)
-      .eq('kind', 'points')
-      .maybeSingle(),
+      .eq('edition_id', edition.id),
   ]);
 
   return {
@@ -49,6 +47,10 @@ export async function getPicksIndex(userId: string) {
     picks: picks ?? [],
     results: results ?? [],
     gcPicks: gcPicks ?? [],
-    jerseyPick: jerseyPick ?? null,
+    jerseyPicks: (jerseyPicksRaw ?? []) as Array<{
+      kind: 'points' | 'white';
+      rider_id: string;
+      riders: { id: string; name: string; team: string | null; bib: number | null };
+    }>,
   };
 }
