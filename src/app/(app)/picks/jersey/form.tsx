@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useState, useActionState } from 'react';
-import { submitJerseyPick } from '@/lib/actions/picks';
 import { RiderPicker, type PickerRider } from '@/components/rider-picker';
 import { PageHeading } from '@/app/(app)/picks/page-heading';
 import { Badge } from '@/components/design/badge';
@@ -11,6 +10,11 @@ import { DsButton } from '@/components/design/button';
 import { BibTile } from '@/components/design/bib-tile';
 import { JerseyGlyph } from '@/components/design/jersey-glyph';
 import type { ActionResult } from '@/lib/actions/result';
+
+// Temporary stub — Task 7 deletes this file when /picks/jersey becomes a redirect.
+async function submitJerseyPick(_prev: unknown, _formData: FormData) {
+  return { ok: false as const, error: 'route_replaced' };
+}
 
 type Rider = {
   id: string;
