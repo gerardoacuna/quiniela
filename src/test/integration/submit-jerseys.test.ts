@@ -71,30 +71,64 @@ d('submitJerseyPicksCore', () => {
       start_time: new Date(Date.now() - 3600_000).toISOString(),
       status: 'locked',
     });
-    const c = await userClient(user.email, user.password);
-    const res = await submitJerseyPicksCore(c, user.userId, {
-      editionId: EDITION,
-      pointsRiderId: RIDER_POG,
-      whiteRiderId: RIDER_AYU,
-    });
-    expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.error).toBe('jersey_locked');
-
-    // Restore for following tests.
-    await setStageState(STAGE_1, {
-      start_time: new Date(Date.now() + 30 * 24 * 3600_000).toISOString(),
-      status: 'upcoming',
-    });
+    try {
+      const c = await userClient(user.email, user.password);
+      const res = await submitJerseyPicksCore(c, user.userId, {
+        editionId: EDITION,
+        pointsRiderId: RIDER_POG,
+        whiteRiderId: RIDER_AYU,
+      });
+      expect(res.ok).toBe(false);
+      if (!res.ok) expect(res.error).toBe('jersey_locked');
+    } finally {
+      // Restore for following tests.
+      await setStageState(STAGE_1, {
+        start_time: new Date(Date.now() + 30 * 24 * 3600_000).toISOString(),
+        status: 'upcoming',
+      });
+    }
   });
 
   it('rejects a rider from a different edition', async () => {
-    const c = await userClient(user.email, user.password);
-    const res = await submitJerseyPicksCore(c, user.userId, {
-      editionId: '00000000-0000-0000-0000-000000000999',
-      pointsRiderId: RIDER_POG,
-      whiteRiderId: RIDER_AYU,
+    // The action checks Stage 1 lookup first; for the rider-edition check to
+    // actually fire, the target edition needs its own Stage 1 in the future.
+    // Set up a sibling edition + stage 1 + dummy rider, then submit with
+    // *original-edition* riders so the wrong-edition path is exercised.
+    const a = createAdminClient();
+    const OTHER_EDITION = '00000000-0000-4000-8000-0000000000ff';
+    const OTHER_STAGE_1 = '10000000-0000-4000-8000-0000000000ff';
+    await a.from('editions').insert({
+      id: OTHER_EDITION,
+      slug: 'other-edition-test',
+      name: 'Other Edition (test)',
+      start_date: '2099-01-01',
+      end_date: '2099-01-31',
+      is_active: false,
     });
-    expect(res.ok).toBe(false);
+    await a.from('stages').insert({
+      id: OTHER_STAGE_1,
+      edition_id: OTHER_EDITION,
+      number: 1,
+      start_time: new Date(Date.now() + 30 * 24 * 3600_000).toISOString(),
+      counts_for_scoring: true,
+      double_points: false,
+      status: 'upcoming',
+      terrain: 'flat',
+      km: 100,
+    });
+    try {
+      const c = await userClient(user.email, user.password);
+      const res = await submitJerseyPicksCore(c, user.userId, {
+        editionId: OTHER_EDITION,
+        pointsRiderId: RIDER_POG,
+        whiteRiderId: RIDER_AYU,
+      });
+      expect(res.ok).toBe(false);
+      if (!res.ok) expect(res.error).toBe('rider_wrong_edition');
+    } finally {
+      await a.from('stages').delete().eq('id', OTHER_STAGE_1);
+      await a.from('editions').delete().eq('id', OTHER_EDITION);
+    }
   });
 
   it('rejects a rider with status != active', async () => {
