@@ -16,6 +16,7 @@ export default async function AdminFinalPage() {
 
   const gcByPos = new Map((existing ?? []).filter((r) => r.kind === 'gc').map((r) => [r.position, r.rider_id]));
   const jersey = (existing ?? []).find((r) => r.kind === 'points_jersey');
+  const whiteJersey = (existing ?? []).find((r) => r.kind === 'white_jersey');
 
   return (
     <FinalForm
@@ -26,6 +27,7 @@ export default async function AdminFinalPage() {
         third:  gcByPos.get(3) ?? '',
       }}
       initialJersey={jersey?.rider_id ?? ''}
+      initialWhiteJersey={whiteJersey?.rider_id ?? ''}
       riders={riders.map((r) => ({ id: r.id, name: r.name, bib: r.bib, team: r.team ?? '' }))}
     />
   );

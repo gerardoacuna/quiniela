@@ -95,4 +95,27 @@ d('publishFinalCore (admin)', () => {
     const res = await publishFinalCore(c, admin.userId, { editionId: EDITION });
     expect(res.ok).toBe(false);
   });
+
+  it('publishing white jersey matching player pick awards 50 pts (combined with points jersey 50)', async () => {
+    const a = createAdminClient();
+    // Player has both jersey picks set to R_ROG.
+    await a.from('jersey_picks').delete().eq('user_id', player.userId);
+    await a.from('jersey_picks').insert([
+      { user_id: player.userId, edition_id: EDITION, kind: 'points', rider_id: R_ROG },
+      { user_id: player.userId, edition_id: EDITION, kind: 'white',  rider_id: R_ROG },
+    ]);
+    // Reset existing finals so this test is isolated.
+    await a.from('final_classifications').delete().eq('edition_id', EDITION);
+
+    const c = await userClient(admin.email, admin.password);
+    const res = await publishFinalCore(c, admin.userId, {
+      editionId: EDITION,
+      jerseyRiderId: R_ROG,
+      whiteJerseyRiderId: R_ROG,
+    });
+    expect(res.ok).toBe(true);
+
+    const { data } = await a.from('leaderboard_view').select('*').eq('user_id', player.userId);
+    expect(data?.[0]?.jersey_points).toBe(100);
+  });
 });

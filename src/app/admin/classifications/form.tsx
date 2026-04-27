@@ -26,15 +26,17 @@ function RiderSelect({
 }
 
 export function FinalForm({
-  editionId, initialGc, initialJersey, riders,
+  editionId, initialGc, initialJersey, initialWhiteJersey, riders,
 }: {
   editionId: string;
   initialGc: { first: string; second: string; third: string };
   initialJersey: string;
+  initialWhiteJersey: string;
   riders: RiderOpt[];
 }) {
   const [gc, setGc] = useState(initialGc);
   const [jersey, setJersey] = useState(initialJersey);
+  const [whiteJersey, setWhiteJersey] = useState(initialWhiteJersey);
   const [status, setStatus] = useState<null | 'saving' | 'saved' | string>(null);
   const [pending, startTransition] = useTransition();
 
@@ -44,7 +46,7 @@ export function FinalForm({
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Final classifications</h1>
       <p className="text-sm text-muted-foreground">
-        Set and publish GC top-3 and points jersey winner. Either block is optional; publish what you have.
+        Set and publish GC top-3, points jersey winner, and white jersey winner. Each block is optional; publish what you have.
       </p>
 
       <section className="space-y-2">
@@ -68,8 +70,13 @@ export function FinalForm({
         <RiderSelect id="jersey" value={jersey} onChange={setJersey} riders={riders} />
       </section>
 
+      <section className="space-y-2">
+        <h2 className="font-semibold">White jersey winner</h2>
+        <RiderSelect id="whiteJersey" value={whiteJersey} onChange={setWhiteJersey} riders={riders} />
+      </section>
+
       <Button
-        disabled={pending || (!gcValid && !jersey)}
+        disabled={pending || (!gcValid && !jersey && !whiteJersey)}
         onClick={() => {
           setStatus('saving');
           startTransition(async () => {
@@ -77,6 +84,7 @@ export function FinalForm({
               editionId,
               gc: gcValid ? gc : undefined,
               jerseyRiderId: jersey || undefined,
+              whiteJerseyRiderId: whiteJersey || undefined,
             });
             setStatus(res.ok ? 'saved' : res.error);
           });

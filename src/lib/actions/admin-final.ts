@@ -17,6 +17,7 @@ const publishFinalSchema = z.object({
     third: z.string().uuid(),
   }).optional(),
   jerseyRiderId: z.string().uuid().optional(),
+  whiteJerseyRiderId: z.string().uuid().optional(),
 });
 
 export async function publishFinalCore(
@@ -24,7 +25,7 @@ export async function publishFinalCore(
   actorId: string,
   input: z.infer<typeof publishFinalSchema>,
 ): Promise<ActionResult> {
-  if (!input.gc && !input.jerseyRiderId) {
+  if (!input.gc && !input.jerseyRiderId && !input.whiteJerseyRiderId) {
     return { ok: false, error: 'nothing_to_publish' };
   }
 
@@ -52,6 +53,16 @@ export async function publishFinalCore(
     if (error) return { ok: false, error: error.message };
   }
 
+  if (input.whiteJerseyRiderId) {
+    await supabase.from('final_classifications').delete()
+      .eq('edition_id', input.editionId).eq('kind', 'white_jersey');
+    const { error } = await supabase.from('final_classifications').insert({
+      edition_id: input.editionId, kind: 'white_jersey', position: 1,
+      rider_id: input.whiteJerseyRiderId, status: 'published',
+    });
+    if (error) return { ok: false, error: error.message };
+  }
+
   await supabase.from('audit_log').insert({
     actor_id: actorId,
     action: 'publish_final_classifications',
@@ -59,6 +70,7 @@ export async function publishFinalCore(
       editionId: input.editionId,
       gc: input.gc ? true : false,
       jersey: input.jerseyRiderId ? true : false,
+      whiteJersey: input.whiteJerseyRiderId ? true : false,
     },
   });
 
