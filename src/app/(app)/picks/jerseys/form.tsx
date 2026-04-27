@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useActionState } from 'react';
 import { submitJerseyPicks } from '@/lib/actions/picks';
-import { RiderPicker, type PickerRider } from '@/components/rider-picker';
+import { RiderPicker } from '@/components/rider-picker';
 import { PageHeading } from '@/app/(app)/picks/page-heading';
 import { Badge } from '@/components/design/badge';
 import { Card } from '@/components/design/card';
@@ -32,7 +32,7 @@ function PickerCard({
   kind: 'points' | 'white';
   label: string;
   selectedRider: Rider | null;
-  onSelect: (id: string | null) => void;
+  onSelect: (id: string) => void;
   selectedId: string | null;
   riders: Rider[];
   isLocked: boolean;
@@ -80,7 +80,7 @@ function PickerCard({
 
       {!isLocked && (
         <RiderPicker
-          riders={riders as PickerRider[]}
+          riders={riders}
           selectedId={selectedId}
           onSelect={onSelect}
           disableInactive={true}
