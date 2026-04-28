@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useState, useActionState, useMemo } from 'react';
 import { submitGcPicks } from '@/lib/actions/picks';
 import { RiderPicker, type PickerRider } from '@/components/rider-picker';
+import { RiderSearchInput, filterRidersByQuery } from '@/components/rider-search-input';
+import { StickyActionBar } from '@/components/sticky-save-bar';
 import { PageHeading } from '@/app/(app)/picks/page-heading';
 import { Badge } from '@/components/design/badge';
 import { Card } from '@/components/design/card';
@@ -45,6 +47,7 @@ export function GcPickForm({
 
   const [picks, setPicks] = useState<[string | null, string | null, string | null]>(initPickIds);
   const [editingPos, setEditingPos] = useState<1 | 2 | 3 | null>(null);
+  const [query, setQuery] = useState('');
   const [state, formAction, pending] = useActionState(submitGcPicks, null as ActionResult | null);
 
   const riderMap = useMemo(() => new Map(allRiders.map((r) => [r.id, r])), [allRiders]);
@@ -61,6 +64,7 @@ export function GcPickForm({
   function handleSlotClick(pos: 1 | 2 | 3) {
     if (isLocked) return;
     setEditingPos((prev) => (prev === pos ? null : pos));
+    setQuery('');
   }
 
   function handlePickerSelect(riderId: string) {
@@ -78,14 +82,15 @@ export function GcPickForm({
     setEditingPos(null);
   }
 
-  // Riders available for the picker: filter out riders placed in OTHER slots
+  // Riders available for the picker: filter out riders placed in OTHER slots, then by query.
   const pickerRiders: PickerRider[] = useMemo(() => {
     if (editingPos === null) return [];
-    return allRiders.filter((r) =>
+    const slotFiltered = allRiders.filter((r) =>
       r.status === 'active' &&
       picks.every((p, i) => (i === editingPos - 1 ? true : p !== r.id)),
     );
-  }, [allRiders, picks, editingPos]);
+    return filterRidersByQuery(slotFiltered, query);
+  }, [allRiders, picks, editingPos, query]);
 
   const selectedForPicker = editingPos !== null ? picks[editingPos - 1] : null;
 
@@ -194,13 +199,16 @@ export function GcPickForm({
 
       {/* Inline picker */}
       {editingPos !== null && (
-        <RiderPicker
-          riders={pickerRiders}
-          selectedId={selectedForPicker}
-          onSelect={handlePickerSelect}
-          disableInactive={true}
-          disableUsed={false}
-        />
+        <>
+          <RiderSearchInput value={query} onChange={setQuery} />
+          <RiderPicker
+            riders={pickerRiders}
+            selectedId={selectedForPicker}
+            onSelect={handlePickerSelect}
+            disableInactive={true}
+            disableUsed={false}
+          />
+        </>
       )}
 
       {/* Scoring explainer */}
@@ -225,12 +233,7 @@ export function GcPickForm({
       </div>
 
       {/* Sticky save CTA */}
-      <div
-        style={{
-          position: 'sticky',
-          bottom: 16,
-        }}
-      >
+      <StickyActionBar>
         <form action={formAction}>
           <input type="hidden" name="editionId" value={editionId} />
           <input type="hidden" name={SLOT_ORDINALS[0]} value={picks[0] ?? ''} />
@@ -253,7 +256,7 @@ export function GcPickForm({
             {state.ok ? 'GC picks saved.' : state.error}
           </div>
         )}
-      </div>
+      </StickyActionBar>
     </div>
   );
 }
