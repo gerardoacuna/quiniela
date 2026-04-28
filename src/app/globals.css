@@ -68,6 +68,7 @@
   --radius: 2px;
   --display-weight: 600;
   --display-italic: normal;
+  --bottom-nav-h: calc(74px + env(safe-area-inset-bottom));
 
   /* shadcn/ui compatibility mappings */
   --background: var(--bg);
@@ -105,6 +106,12 @@
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--hair);
   --sidebar-ring: var(--accent);
+}
+
+@media (min-width: 880px) {
+  :root {
+    --bottom-nav-h: 0px;
+  }
 }
 
 @layer base {
