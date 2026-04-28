@@ -72,7 +72,7 @@ export function PreRaceStrip({
         )}
       </MiniPickCard>
 
-      <MiniPickCard label="Points jersey" locked={locked} href={locked ? undefined : '/picks/jerseys'}>
+      <MiniPickCard label="Points jersey" locked={locked} href={locked ? undefined : '/picks/jerseys/points'}>
         {points ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
             <BibTile num={points.riders.bib} size={26} />
@@ -92,7 +92,7 @@ export function PreRaceStrip({
         )}
       </MiniPickCard>
 
-      <MiniPickCard label="White jersey" locked={locked} href={locked ? undefined : '/picks/jerseys'}>
+      <MiniPickCard label="White jersey" locked={locked} href={locked ? undefined : '/picks/jerseys/white'}>
         {white ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
             <BibTile num={white.riders.bib} size={26} />

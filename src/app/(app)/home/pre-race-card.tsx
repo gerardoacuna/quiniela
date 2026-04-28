@@ -41,7 +41,7 @@ function JerseyRow({ kind, label, pick }: { kind: 'points' | 'white'; label: str
         {label}
       </div>
       {!pick ? (
-        <Link href="/picks/jerseys" style={{
+        <Link href={`/picks/jerseys/${kind}`} style={{
           fontSize: 12,
           color: 'var(--accent)',
           textDecoration: 'underline',
