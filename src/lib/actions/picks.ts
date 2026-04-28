@@ -163,16 +163,16 @@ export async function submitGcPicks(
   return submitGcPicksCore(supabase, user.id, parsed.data);
 }
 
-const submitJerseyPicksSchema = z.object({
+const submitJerseyPickSchema = z.object({
   editionId: z.string().uuid(),
-  pointsRiderId: z.string().uuid(),
-  whiteRiderId: z.string().uuid(),
+  kind: z.enum(['points', 'white']),
+  riderId: z.string().uuid(),
 });
 
-export async function submitJerseyPicksCore(
+export async function submitJerseyPickCore(
   supabase: Supa,
   userId: string,
-  input: { editionId: string; pointsRiderId: string; whiteRiderId: string },
+  input: { editionId: string; kind: 'points' | 'white'; riderId: string },
 ): Promise<ActionResult> {
   const { data: stage1, error: s1Err } = await supabase
     .from('stages')
@@ -186,23 +186,23 @@ export async function submitJerseyPicksCore(
     return { ok: false, error: 'jersey_locked' };
   }
 
-  const ids = Array.from(new Set([input.pointsRiderId, input.whiteRiderId]));
-  const { data: riders, error: rErr } = await supabase
+  const { data: rider, error: rErr } = await supabase
     .from('riders')
     .select('id, edition_id, status')
-    .in('id', ids);
+    .eq('id', input.riderId)
+    .maybeSingle();
   if (rErr) return { ok: false, error: rErr.message };
-  if (!riders || riders.length !== ids.length) return { ok: false, error: 'rider_not_found' };
-  for (const r of riders) {
-    if (r.edition_id !== input.editionId) return { ok: false, error: 'rider_wrong_edition' };
-    if (r.status !== 'active') return { ok: false, error: 'rider_not_active' };
-  }
+  if (!rider) return { ok: false, error: 'rider_not_found' };
+  if (rider.edition_id !== input.editionId) return { ok: false, error: 'rider_wrong_edition' };
+  if (rider.status !== 'active') return { ok: false, error: 'rider_not_active' };
 
   const { error } = await supabase.from('jersey_picks').upsert(
-    [
-      { user_id: userId, edition_id: input.editionId, kind: 'points', rider_id: input.pointsRiderId },
-      { user_id: userId, edition_id: input.editionId, kind: 'white',  rider_id: input.whiteRiderId },
-    ],
+    {
+      user_id: userId,
+      edition_id: input.editionId,
+      kind: input.kind,
+      rider_id: input.riderId,
+    },
     { onConflict: 'user_id,edition_id,kind' },
   );
   if (error) return { ok: false, error: error.message };
@@ -210,18 +210,18 @@ export async function submitJerseyPicksCore(
   return { ok: true, data: undefined };
 }
 
-export async function submitJerseyPicks(
+export async function submitJerseyPick(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const parsed = submitJerseyPicksSchema.safeParse({
+  const parsed = submitJerseyPickSchema.safeParse({
     editionId: formData.get('editionId'),
-    pointsRiderId: formData.get('pointsRiderId'),
-    whiteRiderId: formData.get('whiteRiderId'),
+    kind: formData.get('kind'),
+    riderId: formData.get('riderId'),
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalid_input' };
 
   const { user } = await requireProfile();
   const supabase = await createClient();
-  return submitJerseyPicksCore(supabase, user.id, parsed.data);
+  return submitJerseyPickCore(supabase, user.id, parsed.data);
 }

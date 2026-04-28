@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { submitJerseyPicksCore } from '@/lib/actions/picks';
+import { submitJerseyPickCore } from '@/lib/actions/picks';
 import { createTestUser, userClient, setStageState } from './helpers';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -11,12 +11,11 @@ const RIDER_AYU = '20000000-0000-4000-8000-000000000002';
 const RUN = process.env.SUPABASE_INTEGRATION === '1';
 const d = RUN ? describe : describe.skip;
 
-d('submitJerseyPicksCore', () => {
+d('submitJerseyPickCore', () => {
   let user: Awaited<ReturnType<typeof createTestUser>>;
 
   beforeAll(async () => {
     user = await createTestUser();
-    // Move Stage 1 into the future so jersey picks are writable.
     await setStageState(STAGE_1, {
       start_time: new Date(Date.now() + 30 * 24 * 3600_000).toISOString(),
       status: 'upcoming',
@@ -27,19 +26,37 @@ d('submitJerseyPicksCore', () => {
     const a = createAdminClient();
     await a.from('jersey_picks').delete().eq('user_id', user.userId);
     await user.cleanup();
-    // Restore Stage 1 to its seeded published state for other tests.
     await setStageState(STAGE_1, {
       start_time: new Date(Date.now() - 24 * 3600_000).toISOString(),
       status: 'published',
     });
   });
 
-  it('saves both jersey kinds in one call', async () => {
+  it('saves a single jersey kind per call (points)', async () => {
     const c = await userClient(user.email, user.password);
-    const res = await submitJerseyPicksCore(c, user.userId, {
+    const res = await submitJerseyPickCore(c, user.userId, {
       editionId: EDITION,
-      pointsRiderId: RIDER_POG,
-      whiteRiderId: RIDER_AYU,
+      kind: 'points',
+      riderId: RIDER_POG,
+    });
+    expect(res.ok).toBe(true);
+
+    const a = createAdminClient();
+    const { data } = await a
+      .from('jersey_picks')
+      .select('kind, rider_id')
+      .eq('user_id', user.userId)
+      .eq('edition_id', EDITION)
+      .order('kind');
+    expect(data).toEqual([{ kind: 'points', rider_id: RIDER_POG }]);
+  });
+
+  it('saving white after points leaves both rows present', async () => {
+    const c = await userClient(user.email, user.password);
+    const res = await submitJerseyPickCore(c, user.userId, {
+      editionId: EDITION,
+      kind: 'white',
+      riderId: RIDER_AYU,
     });
     expect(res.ok).toBe(true);
 
@@ -56,14 +73,24 @@ d('submitJerseyPicksCore', () => {
     ]);
   });
 
-  it('allows the same rider for both kinds', async () => {
+  it('upserting the same kind twice replaces the rider', async () => {
     const c = await userClient(user.email, user.password);
-    const res = await submitJerseyPicksCore(c, user.userId, {
+    const res = await submitJerseyPickCore(c, user.userId, {
       editionId: EDITION,
-      pointsRiderId: RIDER_POG,
-      whiteRiderId: RIDER_POG,
+      kind: 'points',
+      riderId: RIDER_AYU,
     });
     expect(res.ok).toBe(true);
+
+    const a = createAdminClient();
+    const { data } = await a
+      .from('jersey_picks')
+      .select('kind, rider_id')
+      .eq('user_id', user.userId)
+      .eq('edition_id', EDITION)
+      .eq('kind', 'points')
+      .single();
+    expect(data).toEqual({ kind: 'points', rider_id: RIDER_AYU });
   });
 
   it('rejects when Stage 1 has already started', async () => {
@@ -73,15 +100,14 @@ d('submitJerseyPicksCore', () => {
     });
     try {
       const c = await userClient(user.email, user.password);
-      const res = await submitJerseyPicksCore(c, user.userId, {
+      const res = await submitJerseyPickCore(c, user.userId, {
         editionId: EDITION,
-        pointsRiderId: RIDER_POG,
-        whiteRiderId: RIDER_AYU,
+        kind: 'points',
+        riderId: RIDER_POG,
       });
       expect(res.ok).toBe(false);
       if (!res.ok) expect(res.error).toBe('jersey_locked');
     } finally {
-      // Restore for following tests.
       await setStageState(STAGE_1, {
         start_time: new Date(Date.now() + 30 * 24 * 3600_000).toISOString(),
         status: 'upcoming',
@@ -90,10 +116,6 @@ d('submitJerseyPicksCore', () => {
   });
 
   it('rejects a rider from a different edition', async () => {
-    // The action checks Stage 1 lookup first; for the rider-edition check to
-    // actually fire, the target edition needs its own Stage 1 in the future.
-    // Set up a sibling edition + stage 1 + dummy rider, then submit with
-    // *original-edition* riders so the wrong-edition path is exercised.
     const a = createAdminClient();
     const OTHER_EDITION = '00000000-0000-4000-8000-0000000000ff';
     const OTHER_STAGE_1 = '10000000-0000-4000-8000-0000000000ff';
@@ -118,10 +140,10 @@ d('submitJerseyPicksCore', () => {
     });
     try {
       const c = await userClient(user.email, user.password);
-      const res = await submitJerseyPicksCore(c, user.userId, {
+      const res = await submitJerseyPickCore(c, user.userId, {
         editionId: OTHER_EDITION,
-        pointsRiderId: RIDER_POG,
-        whiteRiderId: RIDER_AYU,
+        kind: 'points',
+        riderId: RIDER_POG,
       });
       expect(res.ok).toBe(false);
       if (!res.ok) expect(res.error).toBe('rider_wrong_edition');
@@ -136,10 +158,10 @@ d('submitJerseyPicksCore', () => {
     await a.from('riders').update({ status: 'dnf' }).eq('id', RIDER_AYU);
     try {
       const c = await userClient(user.email, user.password);
-      const res = await submitJerseyPicksCore(c, user.userId, {
+      const res = await submitJerseyPickCore(c, user.userId, {
         editionId: EDITION,
-        pointsRiderId: RIDER_POG,
-        whiteRiderId: RIDER_AYU,
+        kind: 'white',
+        riderId: RIDER_AYU,
       });
       expect(res.ok).toBe(false);
       if (!res.ok) expect(res.error).toBe('rider_not_active');
