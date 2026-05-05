@@ -81,3 +81,32 @@ export async function setRiderStatus(
 
   return { ok: true, data: undefined };
 }
+
+const setRiderTopTierSchema = z.object({
+  riderId: z.string().uuid(),
+  isTopTier: z.boolean(),
+});
+
+export async function setRiderTopTier(
+  riderId: string,
+  isTopTier: boolean,
+): Promise<ActionResult> {
+  const parsed = setRiderTopTierSchema.safeParse({ riderId, isTopTier });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalid_input' };
+
+  const { user } = await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('riders')
+    .update({ is_top_tier: parsed.data.isTopTier })
+    .eq('id', parsed.data.riderId);
+  if (error) return { ok: false, error: error.message };
+
+  await supabase.from('audit_log').insert({
+    actor_id: user.id,
+    action: 'set_rider_top_tier',
+    target: { riderId: parsed.data.riderId, isTopTier: parsed.data.isTopTier },
+  });
+
+  return { ok: true, data: undefined };
+}

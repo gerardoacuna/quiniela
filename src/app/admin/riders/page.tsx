@@ -22,6 +22,7 @@ export default async function AdminRidersPage() {
         bib: r.bib,
         status: r.status,
         pcs_slug: r.pcs_slug,
+        is_top_tier: r.is_top_tier,
       }))}
     />
   );

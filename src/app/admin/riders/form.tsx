@@ -1,11 +1,11 @@
 'use client';
 import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { upsertRidersFromStartlist, setRiderStatus } from '@/lib/actions/admin-rider';
+import { upsertRidersFromStartlist, setRiderStatus, setRiderTopTier } from '@/lib/actions/admin-rider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-type R = { id: string; name: string; team: string | null; bib: number | null; status: 'active' | 'dnf' | 'dns'; pcs_slug: string };
+type R = { id: string; name: string; team: string | null; bib: number | null; status: 'active' | 'dnf' | 'dns'; pcs_slug: string; is_top_tier: boolean };
 
 export function RidersTable({
   editionId, editionSlug, year, riders,
@@ -66,6 +66,7 @@ export function RidersTable({
             <th className="p-2 text-left">Name</th>
             <th className="p-2 text-left">Team</th>
             <th className="p-2">Status</th>
+            <th className="p-2">Top tier</th>
           </tr>
         </thead>
         <tbody>
@@ -91,6 +92,21 @@ export function RidersTable({
                   <option value="dnf">dnf</option>
                   <option value="dns">dns</option>
                 </select>
+              </td>
+              <td className="p-2 text-center">
+                <input
+                  type="checkbox"
+                  checked={r.is_top_tier}
+                  disabled={pending}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    startTransition(async () => {
+                      const res = await setRiderTopTier(r.id, next);
+                      if (res.ok) router.refresh();
+                      else setStatus(res.error);
+                    });
+                  }}
+                />
               </td>
             </tr>
           ))}
