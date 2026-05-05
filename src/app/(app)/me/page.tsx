@@ -1,6 +1,6 @@
 import { requireProfile } from '@/lib/auth/require-user';
 import { getMeData } from '@/lib/queries/me';
-import { stagePoints } from '@/lib/scoring';
+import { stageRowPoints } from '@/lib/scoring';
 import { ordinal } from '@/components/design/time';
 import { PageHeading } from '@/app/(app)/picks/page-heading';
 import { SectionHeading } from '@/app/(app)/picks/section-heading';
@@ -27,26 +27,52 @@ export default async function MePage() {
 
   const { edition, profile, rank, board, stagePicks, gcPicks, jerseyPicks, results, countedStagesTotal } = data;
 
-  // Scored stage picks — only stages that are published
-  const scoredStagePicks = stagePicks
+  // Scored stage picks — only stages that are published. Hedge picks contribute their own
+  // sub-row per (stage, kind), so a single stage can produce up to two history rows.
+  type ScoredStagePick = {
+    stageN: number;
+    kind: 'primary' | 'hedge';
+    riderName: string;
+    stageDetail: string;
+    position: number | null;
+    points: number;
+  };
+
+  const scoredStagePicks: ScoredStagePick[] = stagePicks
     .filter((p) => p.stages.status === 'published')
-    .map((p) => {
+    .flatMap((p) => {
       const stageResults = results.filter((r) => r.stage_id === p.stage_id);
-      const pts = stagePoints(
-        { rider_id: p.rider_id },
-        { double_points: p.stages.double_points, status: 'published' },
+      const stageMeta = { double_points: p.stages.double_points, status: 'published' as const };
+      const breakdown = stageRowPoints(
+        { rider_id: p.rider_id, hedge_rider_id: p.hedge_rider_id },
+        stageMeta,
         stageResults,
       );
-      const resultRow = stageResults.find((r) => r.rider_id === p.rider_id);
-      return {
-        stageN: p.stages.number,
-        riderName: p.riders.name,
-        stageDetail: `Stage ${p.stages.number} · ${p.stages.terrain} · ${p.stages.km} km`,
-        position: resultRow?.position ?? null,
-        points: pts,
-      };
+      const primaryRow = stageResults.find((r) => r.rider_id === p.rider_id);
+      const out: ScoredStagePick[] = [
+        {
+          stageN: p.stages.number,
+          kind: 'primary',
+          riderName: p.riders.name,
+          stageDetail: `Stage ${p.stages.number} · ${p.stages.terrain} · ${p.stages.km} km`,
+          position: primaryRow?.position ?? null,
+          points: breakdown.primary,
+        },
+      ];
+      if (p.hedge_rider_id && p.hedge_rider) {
+        const hedgeRow = stageResults.find((r) => r.rider_id === p.hedge_rider_id);
+        out.push({
+          stageN: p.stages.number,
+          kind: 'hedge',
+          riderName: p.hedge_rider.name,
+          stageDetail: `Stage ${p.stages.number} · hedge`,
+          position: hedgeRow?.position ?? null,
+          points: breakdown.hedge,
+        });
+      }
+      return out;
     })
-    .sort((a, b) => a.stageN - b.stageN);
+    .sort((a, b) => a.stageN - b.stageN || (a.kind === 'primary' ? -1 : 1));
 
   // "Made" stat: user picks on counted stages vs total counted stages in the edition.
   // stage_picks can only reference stages flagged counts_for_scoring in the admin,
@@ -82,7 +108,7 @@ export default async function MePage() {
         ) : (
           scoredStagePicks.map((s) => (
             <div
-              key={s.stageN}
+              key={`${s.stageN}-${s.kind}`}
               style={{
                 display: 'grid',
                 gridTemplateColumns: '36px 1fr auto auto',
@@ -100,10 +126,25 @@ export default async function MePage() {
                   color: 'var(--ink)',
                 }}
               >
-                {s.stageN}
+                {s.kind === 'primary' ? s.stageN : ''}
               </span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{s.riderName}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9,
+                      letterSpacing: 1,
+                      color: s.kind === 'hedge' ? 'var(--accent)' : 'var(--ink-mute)',
+                      width: 14,
+                      flexShrink: 0,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {s.kind === 'primary' ? 'P' : 'H'}
+                  </span>
+                  {s.riderName}
+                </div>
                 <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{s.stageDetail}</div>
               </div>
               <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
