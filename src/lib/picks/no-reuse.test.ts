@@ -49,4 +49,18 @@ describe('validateNoReuse', () => {
   it('empty existing list always allows', () => {
     expect(validateNoReuse([], 's1', 'anyone').ok).toBe(true);
   });
+
+  it('rejects when target rider was used as a hedge on another stage (caller flattens)', () => {
+    // Caller flattened a row with primary=A, hedge=B on stage 1 into two ExistingPicks.
+    const existing: ExistingPick[] = [
+      { stage_id: 's1', rider_id: 'rider-A', stage_status: 'published', stage_number: 1 },
+      { stage_id: 's1', rider_id: 'rider-B', stage_status: 'published', stage_number: 1 },
+    ];
+    const result = validateNoReuse(existing, 's2', 'rider-B');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('rider_already_used');
+      expect(result.conflictingStageNumber).toBe(1);
+    }
+  });
 });
