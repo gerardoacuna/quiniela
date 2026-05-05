@@ -7,7 +7,7 @@ const EDITION = '00000000-0000-4000-8000-000000000001';
 // keep the points arithmetic legible and assert the additive sum directly.
 const STAGE_ID = '10000000-0000-4000-8000-000000000002';
 const RIDER_PRIMARY = '20000000-0000-4000-8000-000000000003'; // Evenepoel
-const RIDER_HEDGE   = '20000000-0000-4000-8000-000000000004'; // Roglič
+const RIDER_UNDERDOG   = '20000000-0000-4000-8000-000000000004'; // Roglič
 
 const RUN = process.env.SUPABASE_INTEGRATION === '1';
 const d = RUN ? describe : describe.skip;
@@ -55,17 +55,17 @@ d('leaderboard_view stage additive scoring', () => {
     return data;
   }
 
-  it('primary P3 + hedge P7 = 14 stage points', async () => {
+  it('primary P3 + underdog P7 = 14 stage points', async () => {
     const a = createAdminClient();
     await a.from('stage_results').insert([
       { stage_id: STAGE_ID, position: 3, rider_id: RIDER_PRIMARY, status: 'published' },
-      { stage_id: STAGE_ID, position: 7, rider_id: RIDER_HEDGE,   status: 'published' },
+      { stage_id: STAGE_ID, position: 7, rider_id: RIDER_UNDERDOG,   status: 'published' },
     ]);
     await a.from('stage_picks').insert({
       user_id: user.userId,
       stage_id: STAGE_ID,
       rider_id: RIDER_PRIMARY,
-      hedge_rider_id: RIDER_HEDGE,
+      underdog_rider_id: RIDER_UNDERDOG,
     });
 
     const board = await readBoard();
@@ -73,17 +73,17 @@ d('leaderboard_view stage additive scoring', () => {
     expect(board?.exact_winners_count).toBe(0);
   });
 
-  it('exact_winners_count ticks when hedge lands P1', async () => {
+  it('exact_winners_count ticks when underdog lands P1', async () => {
     const a = createAdminClient();
     await a.from('stage_results').insert([
-      { stage_id: STAGE_ID, position: 1, rider_id: RIDER_HEDGE,   status: 'published' },
+      { stage_id: STAGE_ID, position: 1, rider_id: RIDER_UNDERDOG,   status: 'published' },
       { stage_id: STAGE_ID, position: 5, rider_id: RIDER_PRIMARY, status: 'published' },
     ]);
     await a.from('stage_picks').insert({
       user_id: user.userId,
       stage_id: STAGE_ID,
       rider_id: RIDER_PRIMARY,
-      hedge_rider_id: RIDER_HEDGE,
+      underdog_rider_id: RIDER_UNDERDOG,
     });
 
     const board = await readBoard();
@@ -91,7 +91,7 @@ d('leaderboard_view stage additive scoring', () => {
     expect(board?.exact_winners_count).toBe(1);
   });
 
-  it('hedge null produces only the primary contribution', async () => {
+  it('underdog null produces only the primary contribution', async () => {
     const a = createAdminClient();
     await a.from('stage_results').insert([
       { stage_id: STAGE_ID, position: 2, rider_id: RIDER_PRIMARY, status: 'published' },
@@ -100,7 +100,7 @@ d('leaderboard_view stage additive scoring', () => {
       user_id: user.userId,
       stage_id: STAGE_ID,
       rider_id: RIDER_PRIMARY,
-      hedge_rider_id: null,
+      underdog_rider_id: null,
     });
 
     const board = await readBoard();

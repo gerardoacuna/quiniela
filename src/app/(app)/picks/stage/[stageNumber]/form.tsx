@@ -12,7 +12,7 @@ import { submitStagePicks } from '@/lib/actions/picks';
 import { StagePickHeader } from './stage-pick-header';
 import type { ActionResult } from '@/lib/actions/result';
 
-type Tab = 'primary' | 'hedge';
+type Tab = 'primary' | 'underdog';
 
 type FormRider = PickerRider & { is_top_tier: boolean };
 
@@ -24,7 +24,7 @@ export function StagePickForm({
   doublePoints,
   startTimeIso,
   initialPrimaryRiderId,
-  initialHedgeRiderId,
+  initialUnderdogRiderId,
   riders,
 }: {
   stageId: string;
@@ -34,14 +34,14 @@ export function StagePickForm({
   doublePoints: boolean;
   startTimeIso: string;
   initialPrimaryRiderId: string | null;
-  initialHedgeRiderId: string | null;
+  initialUnderdogRiderId: string | null;
   riders: FormRider[];
 }) {
   const [tab, setTab] = useState<Tab>('primary');
   const [primaryId, setPrimaryId] = useState<string | null>(initialPrimaryRiderId);
-  const [hedgeId, setHedgeId] = useState<string | null>(initialHedgeRiderId);
+  const [underdogId, setUnderdogId] = useState<string | null>(initialUnderdogRiderId);
   const [savedPrimaryId, setSavedPrimaryId] = useState<string | null>(initialPrimaryRiderId);
-  const [savedHedgeId, setSavedHedgeId] = useState<string | null>(initialHedgeRiderId);
+  const [savedUnderdogId, setSavedUnderdogId] = useState<string | null>(initialUnderdogRiderId);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'available'>('all');
 
@@ -50,7 +50,7 @@ export function StagePickForm({
     setQuery('');
   }
 
-  const pendingSubmissionRef = useRef<{ primary: string | null; hedge: string | null } | null>(null);
+  const pendingSubmissionRef = useRef<{ primary: string | null; underdog: string | null } | null>(null);
   const [state, formAction, pending] = useActionState(
     submitStagePicks,
     null as ActionResult<{ stagePickId: string }> | null,
@@ -59,14 +59,14 @@ export function StagePickForm({
   useEffect(() => {
     if (state?.ok && pendingSubmissionRef.current) {
       setSavedPrimaryId(pendingSubmissionRef.current.primary);
-      setSavedHedgeId(pendingSubmissionRef.current.hedge);
+      setSavedUnderdogId(pendingSubmissionRef.current.underdog);
       pendingSubmissionRef.current = null;
     }
   }, [state]);
 
   const ridersById = useMemo(() => new Map(riders.map((r) => [r.id, r])), [riders]);
   const savedPrimary = savedPrimaryId ? ridersById.get(savedPrimaryId) ?? null : null;
-  const savedHedge = savedHedgeId ? ridersById.get(savedHedgeId) ?? null : null;
+  const savedUnderdog = savedUnderdogId ? ridersById.get(savedUnderdogId) ?? null : null;
   const selectedPrimary = primaryId ? ridersById.get(primaryId) ?? null : null;
 
   // Picker source rows — kind-aware filtering before search.
@@ -82,7 +82,7 @@ export function StagePickForm({
       );
   }, [riders, tab, primaryId]);
 
-  const tabSavedId = tab === 'primary' ? savedPrimaryId : savedHedgeId;
+  const tabSavedId = tab === 'primary' ? savedPrimaryId : savedUnderdogId;
   const availableCount = pickerRiders.filter(
     (r) => r.usedOnStageNumber == null || r.id === tabSavedId,
   ).length;
@@ -97,15 +97,15 @@ export function StagePickForm({
     [filteredRiders, query],
   );
 
-  const selectedId = tab === 'primary' ? primaryId : hedgeId;
-  const setSelectedId = tab === 'primary' ? setPrimaryId : setHedgeId;
+  const selectedId = tab === 'primary' ? primaryId : underdogId;
+  const setSelectedId = tab === 'primary' ? setPrimaryId : setUnderdogId;
 
   const incompletePrimary = !primaryId;
-  const dirty = primaryId !== savedPrimaryId || hedgeId !== savedHedgeId;
+  const dirty = primaryId !== savedPrimaryId || underdogId !== savedUnderdogId;
   const canSave = !incompletePrimary && dirty && !pending;
 
-  function handleRemoveHedge() {
-    setHedgeId(null);
+  function handleRemoveUnderdog() {
+    setUnderdogId(null);
   }
 
   return (
@@ -147,7 +147,7 @@ export function StagePickForm({
         }}
       >
         <CurrentPickRow label="PRIMARY" rider={savedPrimary} />
-        <CurrentPickRow label="HEDGE" rider={savedHedge} />
+        <CurrentPickRow label="UNDERDOG" rider={savedUnderdog} />
       </div>
 
       {/* Toggle */}
@@ -162,7 +162,7 @@ export function StagePickForm({
           padding: 4,
         }}
       >
-        {(['primary', 'hedge'] as const).map((t) => {
+        {(['primary', 'underdog'] as const).map((t) => {
           const active = tab === t;
           return (
             <button
@@ -181,7 +181,7 @@ export function StagePickForm({
                 textTransform: 'capitalize',
               }}
             >
-              {t === 'primary' ? 'Primary' : 'Hedge'}
+              {t === 'primary' ? 'Primary' : 'Underdog'}
             </button>
           );
         })}
@@ -190,7 +190,7 @@ export function StagePickForm({
       <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
         {tab === 'primary'
           ? 'Top-10 finish scores 25/15/10/8/6/5/4/3/2/1.'
-          : 'Same scoring. Hedge must be a non-top-tier rider; same rider cannot also be your primary on this stage.'}
+          : 'Same scoring. Underdog must be a non-top-tier rider; same rider cannot also be your primary on this stage.'}
       </div>
 
       {/* Search + filter chips */}
@@ -232,11 +232,11 @@ export function StagePickForm({
         disableInactive={true}
       />
 
-      {/* Hedge tab "Remove hedge" affordance */}
-      {tab === 'hedge' && hedgeId !== null && (
+      {/* Underdog tab "Remove underdog" affordance */}
+      {tab === 'underdog' && underdogId !== null && (
         <button
           type="button"
-          onClick={handleRemoveHedge}
+          onClick={handleRemoveUnderdog}
           style={{
             background: 'none',
             border: 'none',
@@ -247,7 +247,7 @@ export function StagePickForm({
             alignSelf: 'flex-start',
           }}
         >
-          × Remove hedge
+          × Remove underdog
         </button>
       )}
 
@@ -273,12 +273,12 @@ export function StagePickForm({
         <form action={formAction}>
           <input type="hidden" name="stageId" value={stageId} />
           <input type="hidden" name="primaryRiderId" value={primaryId ?? ''} />
-          <input type="hidden" name="hedgeRiderId" value={hedgeId ?? ''} />
+          <input type="hidden" name="underdogRiderId" value={underdogId ?? ''} />
           <button
             type="submit"
             disabled={!canSave}
             onClick={() => {
-              if (canSave) pendingSubmissionRef.current = { primary: primaryId, hedge: hedgeId };
+              if (canSave) pendingSubmissionRef.current = { primary: primaryId, underdog: underdogId };
             }}
             style={{
               width: '100%',

@@ -27,9 +27,9 @@ interface StageRowProps {
   locked: boolean;
   isNext: boolean;
   pick?: StageRiderPick | null;
-  hedgePick?: StageRiderPick | null;
+  underdogPick?: StageRiderPick | null;
   result?: { position: number } | null;
-  hedgeResult?: { position: number } | null;
+  underdogResult?: { position: number } | null;
 }
 
 function pickPoints(position: number | undefined, doublePoints: boolean): number {
@@ -48,15 +48,15 @@ export function StageRow({
   locked,
   isNext,
   pick,
-  hedgePick,
+  underdogPick,
   result,
-  hedgeResult,
+  underdogResult,
 }: StageRowProps) {
   const scored = status === 'published';
 
   const primaryPts = scored && pick && result ? pickPoints(result.position, doublePoints) : 0;
-  const hedgePts = scored && hedgePick && hedgeResult ? pickPoints(hedgeResult.position, doublePoints) : 0;
-  const totalPts = primaryPts + hedgePts;
+  const underdogPts = scored && underdogPick && underdogResult ? pickPoints(underdogResult.position, doublePoints) : 0;
+  const totalPts = primaryPts + underdogPts;
 
   let statusNode: React.ReactNode;
   if (scored) {
@@ -154,14 +154,14 @@ export function StageRow({
             )}
           </div>
         )}
-        {hedgePick && (
+        {underdogPick && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2, fontSize: 12 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 1, color: 'var(--ink-mute)' }}>H</span>
-            <TeamChip team={hedgePick.riderTeam} size={10} />
-            <span style={{ color: 'var(--ink)' }}>{hedgePick.riderName}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 1, color: 'var(--ink-mute)' }}>U</span>
+            <TeamChip team={underdogPick.riderTeam} size={10} />
+            <span style={{ color: 'var(--ink)' }}>{underdogPick.riderName}</span>
             {scored && (
               <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
-                {hedgeResult?.position ? ordinal(hedgeResult.position) : '—'} (+{hedgePts})
+                {underdogResult?.position ? ordinal(underdogResult.position) : '—'} (+{underdogPts})
               </span>
             )}
           </div>

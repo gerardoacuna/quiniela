@@ -50,8 +50,8 @@ describe('validateNoReuse', () => {
     expect(validateNoReuse([], 's1', 'anyone').ok).toBe(true);
   });
 
-  it('rejects when target rider was used as a hedge on another stage (caller flattens)', () => {
-    // Caller flattened a row with primary=A, hedge=B on stage 1 into two ExistingPicks.
+  it('rejects when target rider was used as an underdog on another stage (caller flattens)', () => {
+    // Caller flattened a row with primary=A, underdog=B on stage 1 into two ExistingPicks.
     const existing: ExistingPick[] = [
       { stage_id: 's1', rider_id: 'rider-A', stage_status: 'published', stage_number: 1 },
       { stage_id: 's1', rider_id: 'rider-B', stage_status: 'published', stage_number: 1 },

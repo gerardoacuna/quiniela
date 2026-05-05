@@ -27,11 +27,11 @@ export default async function MePage() {
 
   const { edition, profile, rank, board, stagePicks, gcPicks, jerseyPicks, results, countedStagesTotal } = data;
 
-  // Scored stage picks — only stages that are published. Hedge picks contribute their own
+  // Scored stage picks — only stages that are published. Underdog picks contribute their own
   // sub-row per (stage, kind), so a single stage can produce up to two history rows.
   type ScoredStagePick = {
     stageN: number;
-    kind: 'primary' | 'hedge';
+    kind: 'primary' | 'underdog';
     riderName: string;
     stageDetail: string;
     position: number | null;
@@ -44,7 +44,7 @@ export default async function MePage() {
       const stageResults = results.filter((r) => r.stage_id === p.stage_id);
       const stageMeta = { double_points: p.stages.double_points, status: 'published' as const };
       const breakdown = stageRowPoints(
-        { rider_id: p.rider_id, hedge_rider_id: p.hedge_rider_id },
+        { rider_id: p.rider_id, underdog_rider_id: p.underdog_rider_id },
         stageMeta,
         stageResults,
       );
@@ -59,15 +59,15 @@ export default async function MePage() {
           points: breakdown.primary,
         },
       ];
-      if (p.hedge_rider_id && p.hedge_rider) {
-        const hedgeRow = stageResults.find((r) => r.rider_id === p.hedge_rider_id);
+      if (p.underdog_rider_id && p.underdog_rider) {
+        const underdogRow = stageResults.find((r) => r.rider_id === p.underdog_rider_id);
         out.push({
           stageN: p.stages.number,
-          kind: 'hedge',
-          riderName: p.hedge_rider.name,
-          stageDetail: `Stage ${p.stages.number} · hedge`,
-          position: hedgeRow?.position ?? null,
-          points: breakdown.hedge,
+          kind: 'underdog',
+          riderName: p.underdog_rider.name,
+          stageDetail: `Stage ${p.stages.number} · underdog`,
+          position: underdogRow?.position ?? null,
+          points: breakdown.underdog,
         });
       }
       return out;
@@ -135,7 +135,7 @@ export default async function MePage() {
                       fontFamily: 'var(--font-mono)',
                       fontSize: 9,
                       letterSpacing: 1,
-                      color: s.kind === 'hedge' ? 'var(--accent)' : 'var(--ink-mute)',
+                      color: s.kind === 'underdog' ? 'var(--accent)' : 'var(--ink-mute)',
                       width: 14,
                       flexShrink: 0,
                       fontWeight: 700,

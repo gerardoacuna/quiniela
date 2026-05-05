@@ -30,9 +30,9 @@ export default async function PicksPage() {
       riderId: string;
       riderName: string;
       riderTeam: string | null;
-      hedgeRiderId: string | null;
-      hedgeRiderName: string | null;
-      hedgeRiderTeam: string | null;
+      underdogRiderId: string | null;
+      underdogRiderName: string | null;
+      underdogRiderTeam: string | null;
       stageNumber: number;
     }
   >();
@@ -40,16 +40,16 @@ export default async function PicksPage() {
     const pr = p as unknown as PickRow & {
       stages: StageRel;
       riders: RiderRel;
-      hedge_rider_id: string | null;
-      hedge_rider: RiderRel | null;
+      underdog_rider_id: string | null;
+      underdog_rider: RiderRel | null;
     };
     picksByStage.set(p.stage_id, {
       riderId: p.rider_id,
       riderName: pr.riders.name,
       riderTeam: pr.riders.team,
-      hedgeRiderId: pr.hedge_rider_id,
-      hedgeRiderName: pr.hedge_rider?.name ?? null,
-      hedgeRiderTeam: pr.hedge_rider?.team ?? null,
+      underdogRiderId: pr.underdog_rider_id,
+      underdogRiderName: pr.underdog_rider?.name ?? null,
+      underdogRiderTeam: pr.underdog_rider?.team ?? null,
       stageNumber: pr.stages.number,
     });
   }
@@ -133,8 +133,8 @@ export default async function PicksPage() {
             const relevantResult =
               result && pick && result.riderId === pick.riderId ? result : null;
 
-            const hedgeResultRow = pick?.hedgeRiderId
-              ? results.find((r) => r.stage_id === s.id && r.rider_id === pick.hedgeRiderId)
+            const underdogResultRow = pick?.underdogRiderId
+              ? results.find((r) => r.stage_id === s.id && r.rider_id === pick.underdogRiderId)
               : null;
 
             return (
@@ -149,17 +149,17 @@ export default async function PicksPage() {
                 locked={locked}
                 isNext={nextStage?.id === s.id}
                 pick={pick ?? null}
-                hedgePick={
-                  pick?.hedgeRiderId
+                underdogPick={
+                  pick?.underdogRiderId
                     ? {
-                        riderId: pick.hedgeRiderId,
-                        riderName: pick.hedgeRiderName ?? '—',
-                        riderTeam: pick.hedgeRiderTeam,
+                        riderId: pick.underdogRiderId,
+                        riderName: pick.underdogRiderName ?? '—',
+                        riderTeam: pick.underdogRiderTeam,
                       }
                     : null
                 }
                 result={relevantResult ?? null}
-                hedgeResult={hedgeResultRow ? { position: hedgeResultRow.position } : null}
+                underdogResult={underdogResultRow ? { position: underdogResultRow.position } : null}
               />
             );
           })}

@@ -1,33 +1,33 @@
-# Stage second pick (hedge) — Design
+# Stage second pick (underdog) — Design
 
 **Date:** 2026-05-05
 **Status:** Draft, awaiting user review
 
 ## Goal
 
-Add an optional second rider pick per counted stage, intended as a hedge. The second pick is restricted to riders that admins haven't flagged as "top tier", uses the same point table as the first pick, and contributes to a user's total additively. The pool of riders a user can spend across primary + hedge picks is shared (one rider, one slot, ever).
+Add an optional second rider pick per counted stage, intended as a underdog. The second pick is restricted to riders that admins haven't flagged as "top tier", uses the same point table as the first pick, and contributes to a user's total additively. The pool of riders a user can spend across primary + underdog picks is shared (one rider, one slot, ever).
 
 ## Decisions (Q&A summary)
 
 | | |
 |---|---|
 | Eligibility ("not top 20") | Admin-flagged `is_top_tier boolean not null default false` on `riders`. No bib fallback. Feature dormant until admins flag riders. |
-| Uniqueness | Total: a rider can be a primary OR a hedge OR neither, exactly once across all counted stages in an edition. |
+| Uniqueness | Total: a rider can be a primary OR a underdog OR neither, exactly once across all counted stages in an edition. |
 | Scoring combination | Additive — both picks score independently using the same point table (25/15/10/8/6/5/4/3/2/1) and `double_points` multiplier. |
 | Per-stage required? | First pick required, second pick optional. |
-| UI | Toggle (segmented control: Primary / Hedge) on `/picks/stage/[n]`, single Save button. |
+| UI | Toggle (segmented control: Primary / Underdog) on `/picks/stage/[n]`, single Save button. |
 | Lock timing | Same as first pick (stage start time). |
-| Visibility | Same as primary — hedge picks become visible to other players after lock. |
-| Tiebreaker | Symmetric: `exact_winners_count` ticks on a hedge P1 hit (still capped at 1 per stage since one rider holds P1). |
+| Visibility | Same as primary — underdog picks become visible to other players after lock. |
+| Tiebreaker | Symmetric: `exact_winners_count` ticks on a underdog P1 hit (still capped at 1 per stage since one rider holds P1). |
 | Cancelled stages | No score, no slot burn — same rule as primary today. |
 
 ## Architecture
 
-Hedge is a sibling column on `stage_picks`, not a peer row. The relationship is asymmetric (primary required, hedge optional and attached to a primary), unlike jerseys where Points and White are independent peers. One row per `(user, stage)`; hedge is a nullable foreign key.
+Underdog is a sibling column on `stage_picks`, not a peer row. The relationship is asymmetric (primary required, underdog optional and attached to a primary), unlike jerseys where Points and White are independent peers. One row per `(user, stage)`; underdog is a nullable foreign key.
 
 Cross-stage / cross-pool uniqueness stays application-enforced via the existing `validateNoReuse` helper, with the adapter flattening each row into 1–2 `ExistingPick` entries before validation. No new DB unique constraints.
 
-The leaderboard view extends its `stage_scoring` CTE to UNION ALL the two streams (primary join + hedge join) so `stage_totals` continues to sum and `count(*) filter (...)` over them naturally.
+The leaderboard view extends its `stage_scoring` CTE to UNION ALL the two streams (primary join + underdog join) so `stage_totals` continues to sum and `count(*) filter (...)` over them naturally.
 
 ## Section 1 — Data model
 
@@ -40,17 +40,17 @@ alter table public.riders
   add column is_top_tier boolean not null default false;
 ```
 
-Effective hedge eligibility: `not is_top_tier`. Primary picks ignore this flag (today's behavior preserved).
+Effective underdog eligibility: `not is_top_tier`. Primary picks ignore this flag (today's behavior preserved).
 
 ### `stage_picks`
 
-Add nullable hedge column + within-row check:
+Add nullable underdog column + within-row check:
 
 ```sql
 alter table public.stage_picks
-  add column hedge_rider_id uuid references public.riders(id),
-  add constraint stage_picks_primary_ne_hedge
-    check (hedge_rider_id is null or hedge_rider_id != rider_id);
+  add column underdog_rider_id uuid references public.riders(id),
+  add constraint stage_picks_primary_ne_underdog
+    check (underdog_rider_id is null or underdog_rider_id != rider_id);
 ```
 
 The existing `unique (user_id, stage_id)` is preserved — still one row per (user, stage).
@@ -77,15 +77,15 @@ A small adapter at the call sites (used by `/me`, `/home` recent-picks, `/picks`
 
 ```ts
 function stageRowPoints(
-  pick: { rider_id: string; hedge_rider_id: string | null },
+  pick: { rider_id: string; underdog_rider_id: string | null },
   stage: StageMeta,
   results: readonly StageResult[],
-): { primary: number; hedge: number; total: number } {
+): { primary: number; underdog: number; total: number } {
   const primary = stagePoints({ rider_id: pick.rider_id }, stage, results);
-  const hedge = pick.hedge_rider_id
-    ? stagePoints({ rider_id: pick.hedge_rider_id }, stage, results)
+  const underdog = pick.underdog_rider_id
+    ? stagePoints({ rider_id: pick.underdog_rider_id }, stage, results)
     : 0;
-  return { primary, hedge, total: primary + hedge };
+  return { primary, underdog, total: primary + underdog };
 }
 ```
 
@@ -125,7 +125,7 @@ with
 
     union all
 
-    -- hedge stream
+    -- underdog stream
     select
       sp.user_id,
       s.edition_id,
@@ -146,9 +146,9 @@ with
      and s.counts_for_scoring
     left join public.stage_results sr
       on sr.stage_id = sp.stage_id
-     and sr.rider_id = sp.hedge_rider_id
+     and sr.rider_id = sp.underdog_rider_id
      and sr.status   = 'published'
-    where sp.hedge_rider_id is not null
+    where sp.underdog_rider_id is not null
   ),
   stage_totals as (
     select
@@ -167,7 +167,7 @@ The rest of the view (gc_scoring, jersey_scoring, final select) is unchanged.
 
 ### Tiebreaker semantics
 
-`exact_winners_count` ticks +1 when **either** a primary or a hedge lands P1 on a stage. It cannot tick +2 on the same stage because P1 is held by exactly one rider. Symmetric with the additive score.
+`exact_winners_count` ticks +1 when **either** a primary or a underdog lands P1 on a stage. It cannot tick +2 on the same stage because P1 is held by exactly one rider. Symmetric with the additive score.
 
 ## Section 3 — Server action
 
@@ -179,18 +179,18 @@ Refactor `submitStagePick` into `submitStagePicks` taking both rider IDs:
 const submitStagePicksSchema = z.object({
   stageId: z.string().uuid(),
   primaryRiderId: z.string().uuid(),
-  hedgeRiderId: z.string().uuid().nullable(),
+  underdogRiderId: z.string().uuid().nullable(),
 });
 
 export async function submitStagePicksCore(
   supabase: Supa,
   userId: string,
-  input: { stageId: string; primaryRiderId: string; hedgeRiderId: string | null },
+  input: { stageId: string; primaryRiderId: string; underdogRiderId: string | null },
 ): Promise<ActionResult<{ stagePickId: string }>> {
   // 1. Stage: exists, not started, not cancelled.
   // 2. Primary rider: exists, in edition, status 'active'.
-  // 3. Hedge rider (if non-null): exists, in edition, status 'active', is_top_tier = false.
-  // 4. Within-row: primaryRiderId != hedgeRiderId.
+  // 3. Underdog rider (if non-null): exists, in edition, status 'active', is_top_tier = false.
+  // 4. Within-row: primaryRiderId != underdogRiderId.
   // 5. Cross-stage: extend validateNoReuse — pre-flatten existing rows to 1–2 ExistingPick entries
   //    each, then run validator twice (once per target rider).
   // 6. Upsert stage_picks with both columns, onConflict: 'user_id,stage_id'.
@@ -202,18 +202,18 @@ export async function submitStagePicksCore(
 
 Reuse existing `rider_already_used_on_stage_<n>`. Add:
 
-- `rider_not_eligible_hedge` — hedge rider has `is_top_tier = true`.
-- `primary_equals_hedge` — within-row violation; mirrors the DB check with a friendlier surface.
+- `rider_not_eligible_underdog` — underdog rider has `is_top_tier = true`.
+- `primary_equals_underdog` — within-row violation; mirrors the DB check with a friendlier surface.
 
 ### `validateNoReuse` adapter
 
-The `ExistingPick` shape and `validateNoReuse` function are unchanged. Only the *adapter* in `submitStagePicksCore` changes: it flattens each `stage_picks` row into 1–2 entries (one for `rider_id`, one for `hedge_rider_id` if set), then calls the validator once per target rider.
+The `ExistingPick` shape and `validateNoReuse` function are unchanged. Only the *adapter* in `submitStagePicksCore` changes: it flattens each `stage_picks` row into 1–2 entries (one for `rider_id`, one for `underdog_rider_id` if set), then calls the validator once per target rider.
 
-A single new test case in `no-reuse.test.ts` covers "hedge already used elsewhere" via the same code path.
+A single new test case in `no-reuse.test.ts` covers "underdog already used elsewhere" via the same code path.
 
 ### Why one action over two
 
-Atomic upsert keeps the row consistent. A two-action approach (save primary, then save hedge) introduces partial-success failure modes — e.g. primary committed and hedge validation fails, leaving the user mid-state with no clear recovery. One save click → one server roundtrip → one row update.
+Atomic upsert keeps the row consistent. A two-action approach (save primary, then save underdog) introduces partial-success failure modes — e.g. primary committed and underdog validation fails, leaving the user mid-state with no clear recovery. One save click → one server roundtrip → one row update.
 
 ## Section 4 — UI: `/picks/stage/[n]`
 
@@ -229,7 +229,7 @@ CURRENT PICKS
 P  [bib]  Pogačar      UAE Team Emirates
 H  [bib]  Lutsenko     Astana
 
-[ Primary  ●  ] [  Hedge   ]      ← segmented control
+[ Primary  ●  ] [  Underdog   ]      ← segmented control
 
 [ search input · diacritic-folded ]
 
@@ -247,12 +247,12 @@ H  [bib]  Lutsenko     Astana
 
 Default tab: Primary. Toggling tabs preserves both selections in form state; only Save commits.
 
-| | Primary tab | Hedge tab |
+| | Primary tab | Underdog tab |
 |---|---|---|
 | List source | All active riders | Active riders with `is_top_tier = false` |
 | `usedOnStageNumber` greying | yes (today's behavior) | yes |
 | Within-stage cross-grey | n/a | rider currently *selected* as primary on this stage (saved OR pending in form state) shows `disabledReason: "Already your primary on this stage"` |
-| Available filter chip | counts available across full pool | counts available within hedge-eligible pool |
+| Available filter chip | counts available across full pool | counts available within underdog-eligible pool |
 
 ### "Current picks" card
 
@@ -262,9 +262,9 @@ Always shows both saved values when set, regardless of toggle position. Empty ro
 
 `<StickyActionBar>` (introduced in the jerseys work). Disabled when *neither* tab has unsaved changes.
 
-### Optional "× Remove hedge"
+### Optional "× Remove underdog"
 
-Small inline link inside the Hedge tab when a hedge is currently saved. Sets the form field to null and is committed by the next Save.
+Small inline link inside the Underdog tab when a underdog is currently saved. Sets the form field to null and is committed by the next Save.
 
 ### Reused components
 
@@ -274,7 +274,7 @@ Small inline link inside the Hedge tab when a hedge is currently saved. Sets the
 
 ### `/picks` `<StageRow>`
 
-Render two compact rider tiles when hedge is set; current row UI when not.
+Render two compact rider tiles when underdog is set; current row UI when not.
 
 ```
 Stage 7 · flat · 198 km
@@ -288,9 +288,9 @@ H  [bib] Lutsenko  ·  —
 
 ### `/me`
 
-`Stage picks · history` card adds a "Hedge" sub-row when set. Row totals reflect the additive sum; a small kind label clarifies the breakdown.
+`Stage picks · history` card adds a "Underdog" sub-row when set. Row totals reflect the additive sum; a small kind label clarifies the breakdown.
 
-`Made` BigStat continues to count *stages with at least a primary* — no separate "hedges made" stat. (YAGNI; can add later.)
+`Made` BigStat continues to count *stages with at least a primary* — no separate "underdogs made" stat. (YAGNI; can add later.)
 
 ### Untouched
 
@@ -300,7 +300,7 @@ Pre-race surfaces, jerseys, GC.
 
 Add an `Is top tier` checkbox per rider on the existing riders admin page. Default off.
 
-The hedge feature is **dormant for any edition where no rider is flagged**: the Hedge tab appears but its rider list is identical to Primary's. Documented behavior, not a bug.
+The underdog feature is **dormant for any edition where no rider is flagged**: the Underdog tab appears but its rider list is identical to Primary's. Documented behavior, not a bug.
 
 Bulk action ("Mark selected rows as top-tier") is reasonable but YAGNI for now — single toggles work fine for ~150 riders.
 
@@ -308,48 +308,48 @@ Bulk action ("Mark selected rows as top-tier") is reasonable but YAGNI for now �
 
 ### Vitest, no DB
 
-`validateNoReuse` test extension: one new case for "hedge already used elsewhere" (same code path as primary, but the existing rows now contain hedge-derived ExistingPick entries).
+`validateNoReuse` test extension: one new case for "underdog already used elsewhere" (same code path as primary, but the existing rows now contain underdog-derived ExistingPick entries).
 
-`stage-row.ts` test: trivial — primary-only, primary + hedge both score, primary scores hedge null, both miss.
+`stage-row.ts` test: trivial — primary-only, primary + underdog both score, primary scores underdog null, both miss.
 
 ### Integration tests (Supabase-gated, env `SUPABASE_INTEGRATION=1`)
 
 `src/test/integration/submit-stage-picks.test.ts`:
 
-- saves primary only; hedge omitted
-- saves primary + hedge
-- updates hedge later without changing primary
-- removes hedge (`hedgeRiderId: null`)
+- saves primary only; underdog omitted
+- saves primary + underdog
+- updates underdog later without changing primary
+- removes underdog (`underdogRiderId: null`)
 - rejects: stage locked
 - rejects: stage cancelled
 - rejects: primary inactive
 - rejects: primary wrong edition
-- rejects: hedge inactive
-- rejects: hedge wrong edition
-- rejects: hedge `is_top_tier = true` → `rider_not_eligible_hedge`
-- rejects: primary == hedge → `primary_equals_hedge`
+- rejects: underdog inactive
+- rejects: underdog wrong edition
+- rejects: underdog `is_top_tier = true` → `rider_not_eligible_underdog`
+- rejects: primary == underdog → `primary_equals_underdog`
 - rejects: primary already used on another counted stage
-- rejects: hedge already used on another counted stage (cross-pool)
-- rejects: hedge equals a rider already used as primary on another stage
+- rejects: underdog already used on another counted stage (cross-pool)
+- rejects: underdog equals a rider already used as primary on another stage
 
 `src/test/integration/leaderboard-stage-additive.test.ts` (or extend an existing leaderboard test):
 
-- additive: primary P3 + hedge P7 on the same stage = 10 + 4
-- `exact_winners_count` ticks on a hedge P1
+- additive: primary P3 + underdog P7 on the same stage = 10 + 4
+- `exact_winners_count` ticks on a underdog P1
 - `double_points` doubles both
 - cancelled stage produces no score from either column
-- hedge null produces only the primary contribution
+- underdog null produces only the primary contribution
 
 ### E2E (Playwright)
 
-Optional smoke test: `/picks/stage/N` save-primary then add-hedge walkthrough. Mark as nice-to-have, not gating MVP.
+Optional smoke test: `/picks/stage/N` save-primary then add-underdog walkthrough. Mark as nice-to-have, not gating MVP.
 
 ## Section 8 — Migrations
 
 ```
 supabase/migrations/
   20260505000001_riders_is_top_tier.sql       — add boolean column, default false
-  20260505000002_stage_picks_hedge.sql        — add hedge_rider_id + check constraint
+  20260505000002_stage_picks_hedge.sql        — add underdog_rider_id + check constraint
   20260505000003_leaderboard_view_hedge.sql   — create or replace leaderboard_view with UNION ALL
 ```
 
@@ -365,25 +365,25 @@ npm run db:types
 
 Every change is additive. Existing rows continue to score exactly as before:
 - `is_top_tier` defaults to `false` → no rider becomes ineligible without admin action.
-- `hedge_rider_id` defaults to `NULL` → existing rows score from `rider_id` alone, identical to today.
-- The view's hedge stream is filtered by `where sp.hedge_rider_id is not null`, so it contributes zero rows for legacy data.
+- `underdog_rider_id` defaults to `NULL` → existing rows score from `rider_id` alone, identical to today.
+- The view's underdog stream is filtered by `where sp.underdog_rider_id is not null`, so it contributes zero rows for legacy data.
 
 No data backfill required. No breaking RLS changes — `stage_picks` policies already operate on the row, which still has the same row-level access semantics.
 
 ## Out of scope
 
-- Per-stage analytics for hedge picks (popularity, hit rate). Add later if useful.
-- A separate "hedges made" tiebreaker. Symmetric tiebreaker via `exact_winners_count` is enough.
+- Per-stage analytics for underdog picks (popularity, hit rate). Add later if useful.
+- A separate "underdogs made" tiebreaker. Symmetric tiebreaker via `exact_winners_count` is enough.
 - Bulk admin tooling for `is_top_tier`. Single-row toggles are fine at ~150 riders.
 - Changing primary-pick rules or scoring. Untouched.
 
 ## Done criteria
 
 1. `is_top_tier` column on riders; admin UI toggles it.
-2. `hedge_rider_id` column on stage_picks; check constraint in place.
+2. `underdog_rider_id` column on stage_picks; check constraint in place.
 3. `submitStagePicksCore` validates and upserts both columns atomically; all error codes wired.
 4. `validateNoReuse` test case added; existing tests still green.
 5. Leaderboard view scores additively across both columns; `exact_winners_count` symmetric.
 6. `/picks/stage/[n]` toggle UI saves both picks in one click; dirty-check covers both fields.
-7. `/picks`, `/home`, `/me` surfaces show hedge picks where appropriate.
+7. `/picks`, `/home`, `/me` surfaces show underdog picks where appropriate.
 8. Lint, typecheck, vitest green.

@@ -22,7 +22,7 @@ export async function getPicksIndex(userId: string) {
       .order('number', { ascending: true }),
     supabase
       .from('stage_picks')
-      .select('stage_id, rider_id, hedge_rider_id, stages!inner(number, status, double_points), riders!inner(id, name, team, bib, status), hedge_rider:riders!stage_picks_hedge_rider_id_fkey(id, name, team, bib, status)')
+      .select('stage_id, rider_id, underdog_rider_id, stages!inner(number, status, double_points), riders!inner(id, name, team, bib, status), underdog_rider:riders!stage_picks_underdog_rider_id_fkey(id, name, team, bib, status)')
       .eq('user_id', userId),
     supabase
       .from('stage_results')

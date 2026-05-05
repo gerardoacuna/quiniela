@@ -29,7 +29,7 @@ export default async function StagePickPage({
     getUserStagePicks(user.id, edition.id),
   ]);
 
-  // Map: rider_id → which other stage uses them (primary OR hedge), if any.
+  // Map: rider_id → which other stage uses them (primary OR underdog), if any.
   const usedByRider = new Map<string, { stage_id: string; stage_number: number; stage_status: string }>();
   for (const p of allPicks) {
     const stagesRel = (p as unknown as { stages: { number: number; status: string } }).stages;
@@ -39,12 +39,12 @@ export default async function StagePickPage({
       stage_status: stagesRel.status,
     };
     usedByRider.set(p.rider_id, meta);
-    const hedgeId = (p as unknown as { hedge_rider_id: string | null }).hedge_rider_id;
-    if (hedgeId) usedByRider.set(hedgeId, meta);
+    const underdogId = (p as unknown as { underdog_rider_id: string | null }).underdog_rider_id;
+    if (underdogId) usedByRider.set(underdogId, meta);
   }
 
   const currentPickForThisStage = allPicks.find((p) => p.stage_id === stage.id) as
-    | (typeof allPicks[number] & { hedge_rider_id: string | null })
+    | (typeof allPicks[number] & { underdog_rider_id: string | null })
     | undefined;
 
   return (
@@ -56,7 +56,7 @@ export default async function StagePickPage({
       doublePoints={stage.double_points}
       startTimeIso={stage.start_time}
       initialPrimaryRiderId={currentPickForThisStage?.rider_id ?? null}
-      initialHedgeRiderId={currentPickForThisStage?.hedge_rider_id ?? null}
+      initialUnderdogRiderId={currentPickForThisStage?.underdog_rider_id ?? null}
       riders={riders.map((r) => {
         const used = usedByRider.get(r.id);
         return {

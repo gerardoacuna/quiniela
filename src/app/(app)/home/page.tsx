@@ -64,7 +64,7 @@ export default async function HomePage() {
     };
   });
 
-  // Recent scored picks (last 3, most recent first). Hedge picks contribute their own
+  // Recent scored picks (last 3, most recent first). Underdog picks contribute their own
   // entry per (stage, kind), so a single stage can produce up to two recent rows.
   const scoredPicks: RecentPick[] = picks
     .filter((p) => p.stages.status === 'published')
@@ -72,7 +72,7 @@ export default async function HomePage() {
       const stageResults = results.filter((r) => r.stage_id === p.stage_id);
       const stageMeta = { double_points: p.stages.double_points, status: 'published' as const };
       const breakdown = stageRowPoints(
-        { rider_id: p.rider_id, hedge_rider_id: p.hedge_rider_id },
+        { rider_id: p.rider_id, underdog_rider_id: p.underdog_rider_id },
         stageMeta,
         stageResults,
       );
@@ -86,14 +86,14 @@ export default async function HomePage() {
           points: breakdown.primary,
         },
       ];
-      if (p.hedge_rider_id && p.hedge_rider) {
-        const hedgeRow = stageResults.find((r) => r.rider_id === p.hedge_rider_id);
+      if (p.underdog_rider_id && p.underdog_rider) {
+        const underdogRow = stageResults.find((r) => r.rider_id === p.underdog_rider_id);
         out.push({
           stageN: p.stages.number,
-          kind: 'hedge',
-          rider: { name: p.hedge_rider.name, team: p.hedge_rider.team },
-          position: hedgeRow?.position ?? null,
-          points: breakdown.hedge,
+          kind: 'underdog',
+          rider: { name: p.underdog_rider.name, team: p.underdog_rider.team },
+          position: underdogRow?.position ?? null,
+          points: breakdown.underdog,
         });
       }
       return out;

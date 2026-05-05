@@ -458,39 +458,32 @@ export type Database = {
       stage_picks: {
         Row: {
           created_at: string
-          hedge_rider_id: string | null
           id: string
           rider_id: string
           stage_id: string
+          underdog_rider_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          hedge_rider_id?: string | null
           id?: string
           rider_id: string
           stage_id: string
+          underdog_rider_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
-          hedge_rider_id?: string | null
           id?: string
           rider_id?: string
           stage_id?: string
+          underdog_rider_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "stage_picks_hedge_rider_id_fkey"
-            columns: ["hedge_rider_id"]
-            isOneToOne: false
-            referencedRelation: "riders"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "stage_picks_rider_id_fkey"
             columns: ["rider_id"]
@@ -503,6 +496,13 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_picks_underdog_rider_id_fkey"
+            columns: ["underdog_rider_id"]
+            isOneToOne: false
+            referencedRelation: "riders"
             referencedColumns: ["id"]
           },
           {

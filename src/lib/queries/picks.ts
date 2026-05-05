@@ -5,7 +5,7 @@ export async function getUserStagePicks(userId: string, editionId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('stage_picks')
-    .select('id, stage_id, rider_id, hedge_rider_id, created_at, updated_at, stages!inner(number, status, start_time, edition_id)')
+    .select('id, stage_id, rider_id, underdog_rider_id, created_at, updated_at, stages!inner(number, status, start_time, edition_id)')
     .eq('user_id', userId)
     .eq('stages.edition_id', editionId);
   if (error) throw error;
