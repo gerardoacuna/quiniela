@@ -11,6 +11,12 @@ function terrainLabel(terrain: string): string {
   return terrain.charAt(0).toUpperCase() + terrain.slice(1);
 }
 
+interface StageRiderPick {
+  riderId: string;
+  riderName: string;
+  riderTeam: string | null;
+}
+
 interface StageRowProps {
   number: number;
   startTime: string;
@@ -20,14 +26,16 @@ interface StageRowProps {
   status: string;
   locked: boolean;
   isNext: boolean;
-  pick?: {
-    riderId: string;
-    riderName: string;
-    riderTeam: string | null;
-  } | null;
-  result?: {
-    position: number;
-  } | null;
+  pick?: StageRiderPick | null;
+  hedgePick?: StageRiderPick | null;
+  result?: { position: number } | null;
+  hedgeResult?: { position: number } | null;
+}
+
+function pickPoints(position: number | undefined, doublePoints: boolean): number {
+  if (!position || position < 1 || position > 10) return 0;
+  const base = POINTS_TABLE[position - 1] ?? 0;
+  return doublePoints ? base * 2 : base;
 }
 
 export function StageRow({
@@ -40,35 +48,28 @@ export function StageRow({
   locked,
   isNext,
   pick,
+  hedgePick,
   result,
+  hedgeResult,
 }: StageRowProps) {
   const scored = status === 'published';
 
-  let pts: number | null = null;
-  if (scored && pick && result) {
-    const base = result.position >= 1 && result.position <= 10
-      ? (POINTS_TABLE[result.position - 1] ?? 0)
-      : 0;
-    pts = doublePoints ? base * 2 : base;
-  }
+  const primaryPts = scored && pick && result ? pickPoints(result.position, doublePoints) : 0;
+  const hedgePts = scored && hedgePick && hedgeResult ? pickPoints(hedgeResult.position, doublePoints) : 0;
+  const totalPts = primaryPts + hedgePts;
 
   let statusNode: React.ReactNode;
   if (scored) {
-    const posText = result?.position ? `Finished ${ordinal(result.position)}` : 'No top-10';
-    const ptsVal = pts ?? 0;
     statusNode = (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{posText}</span>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 14,
-            fontWeight: 700,
-            color: ptsVal > 0 ? 'var(--accent)' : 'var(--ink-mute)',
-          }}
-        >
-          +{ptsVal}
-        </span>
+      <div
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 14,
+          fontWeight: 700,
+          color: totalPts > 0 ? 'var(--accent)' : 'var(--ink-mute)',
+        }}
+      >
+        +{totalPts}
       </div>
     );
   } else if (locked) {
@@ -97,7 +98,6 @@ export function StageRow({
         color: 'var(--ink)',
       }}
     >
-      {/* Left: stage number + date */}
       <div>
         <div
           style={{
@@ -124,15 +124,10 @@ export function StageRow({
         </div>
       </div>
 
-      {/* Middle: terrain + km + pick */}
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 600, fontSize: 14 }}>{terrainLabel(terrain)}</span>
-          {doublePoints && (
-            <Badge tone="accent" size="xs">
-              2×
-            </Badge>
-          )}
+          {doublePoints && <Badge tone="accent" size="xs">2×</Badge>}
         </div>
         <div
           style={{
@@ -146,17 +141,33 @@ export function StageRow({
         >
           <TerrainGlyph terrain={terrain as Terrain} color="var(--ink-soft)" />
           <span>{km != null ? `${km} km` : '—'}</span>
-          {pick && (
-            <>
-              <span>·</span>
-              <TeamChip team={pick.riderTeam} size={10} />
-              <span style={{ color: 'var(--ink)' }}>{pick.riderName}</span>
-            </>
-          )}
         </div>
+        {pick && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: 12 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 1, color: 'var(--ink-mute)' }}>P</span>
+            <TeamChip team={pick.riderTeam} size={10} />
+            <span style={{ color: 'var(--ink)' }}>{pick.riderName}</span>
+            {scored && (
+              <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+                {result?.position ? ordinal(result.position) : '—'} (+{primaryPts})
+              </span>
+            )}
+          </div>
+        )}
+        {hedgePick && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2, fontSize: 12 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 1, color: 'var(--ink-mute)' }}>H</span>
+            <TeamChip team={hedgePick.riderTeam} size={10} />
+            <span style={{ color: 'var(--ink)' }}>{hedgePick.riderName}</span>
+            {scored && (
+              <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
+                {hedgeResult?.position ? ordinal(hedgeResult.position) : '—'} (+{hedgePts})
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Right: status node */}
       {statusNode}
     </Link>
   );

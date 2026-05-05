@@ -26,14 +26,30 @@ export default async function PicksPage() {
 
   const picksByStage = new Map<
     string,
-    { riderId: string; riderName: string; riderTeam: string | null; stageNumber: number }
+    {
+      riderId: string;
+      riderName: string;
+      riderTeam: string | null;
+      hedgeRiderId: string | null;
+      hedgeRiderName: string | null;
+      hedgeRiderTeam: string | null;
+      stageNumber: number;
+    }
   >();
   for (const p of picks) {
-    const pr = p as unknown as PickRow & { stages: StageRel; riders: RiderRel };
+    const pr = p as unknown as PickRow & {
+      stages: StageRel;
+      riders: RiderRel;
+      hedge_rider_id: string | null;
+      hedge_rider: RiderRel | null;
+    };
     picksByStage.set(p.stage_id, {
       riderId: p.rider_id,
       riderName: pr.riders.name,
       riderTeam: pr.riders.team,
+      hedgeRiderId: pr.hedge_rider_id,
+      hedgeRiderName: pr.hedge_rider?.name ?? null,
+      hedgeRiderTeam: pr.hedge_rider?.team ?? null,
       stageNumber: pr.stages.number,
     });
   }
@@ -117,6 +133,10 @@ export default async function PicksPage() {
             const relevantResult =
               result && pick && result.riderId === pick.riderId ? result : null;
 
+            const hedgeResultRow = pick?.hedgeRiderId
+              ? results.find((r) => r.stage_id === s.id && r.rider_id === pick.hedgeRiderId)
+              : null;
+
             return (
               <StageRow
                 key={s.id}
@@ -129,7 +149,17 @@ export default async function PicksPage() {
                 locked={locked}
                 isNext={nextStage?.id === s.id}
                 pick={pick ?? null}
+                hedgePick={
+                  pick?.hedgeRiderId
+                    ? {
+                        riderId: pick.hedgeRiderId,
+                        riderName: pick.hedgeRiderName ?? '—',
+                        riderTeam: pick.hedgeRiderTeam,
+                      }
+                    : null
+                }
                 result={relevantResult ?? null}
+                hedgeResult={hedgeResultRow ? { position: hedgeResultRow.position } : null}
               />
             );
           })}
