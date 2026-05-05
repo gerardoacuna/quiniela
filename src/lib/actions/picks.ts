@@ -10,17 +10,18 @@ import type { ActionResult } from './result';
 
 type Supa = SupabaseClient<Database>;
 
-const submitStagePickSchema = z.object({
+const submitStagePicksSchema = z.object({
   stageId: z.string().uuid(),
-  riderId: z.string().uuid(),
+  primaryRiderId: z.string().uuid(),
+  hedgeRiderId: z.string().uuid().nullable(),
 });
 
-export async function submitStagePickCore(
+export async function submitStagePicksCore(
   supabase: Supa,
   userId: string,
-  input: { stageId: string; riderId: string },
+  input: { stageId: string; primaryRiderId: string; hedgeRiderId: string | null },
 ): Promise<ActionResult<{ stagePickId: string }>> {
-  // 1. Load stage.
+  // 1. Stage: exists, not started, not cancelled.
   const { data: stage, error: stageErr } = await supabase
     .from('stages')
     .select('id, edition_id, number, start_time, status, counts_for_scoring')
@@ -33,46 +34,88 @@ export async function submitStagePickCore(
   }
   if (stage.status === 'cancelled') return { ok: false, error: 'stage_cancelled' };
 
-  // 2. Load rider.
-  const { data: rider, error: riderErr } = await supabase
-    .from('riders')
-    .select('id, edition_id, status')
-    .eq('id', input.riderId)
-    .maybeSingle();
-  if (riderErr) return { ok: false, error: riderErr.message };
-  if (!rider) return { ok: false, error: 'rider_not_found' };
-  if (rider.edition_id !== stage.edition_id) return { ok: false, error: 'rider_wrong_edition' };
-  if (rider.status !== 'active') return { ok: false, error: 'rider_not_active' };
+  // 2. Within-row: primary != hedge.
+  if (input.hedgeRiderId !== null && input.primaryRiderId === input.hedgeRiderId) {
+    return { ok: false, error: 'primary_equals_hedge' };
+  }
 
-  // 3. No-reuse check.
+  // 3. Load rider rows for both targets in one query.
+  const targetIds = input.hedgeRiderId
+    ? [input.primaryRiderId, input.hedgeRiderId]
+    : [input.primaryRiderId];
+  const { data: riderRows, error: riderErr } = await supabase
+    .from('riders')
+    .select('id, edition_id, status, is_top_tier')
+    .in('id', targetIds);
+  if (riderErr) return { ok: false, error: riderErr.message };
+
+  const ridersById = new Map((riderRows ?? []).map((r) => [r.id, r]));
+  const primary = ridersById.get(input.primaryRiderId);
+  if (!primary) return { ok: false, error: 'rider_not_found' };
+  if (primary.edition_id !== stage.edition_id) return { ok: false, error: 'rider_wrong_edition' };
+  if (primary.status !== 'active') return { ok: false, error: 'rider_not_active' };
+
+  if (input.hedgeRiderId !== null) {
+    const hedge = ridersById.get(input.hedgeRiderId);
+    if (!hedge) return { ok: false, error: 'rider_not_found' };
+    if (hedge.edition_id !== stage.edition_id) return { ok: false, error: 'rider_wrong_edition' };
+    if (hedge.status !== 'active') return { ok: false, error: 'rider_not_active' };
+    if (hedge.is_top_tier) return { ok: false, error: 'rider_not_eligible_hedge' };
+  }
+
+  // 4. Cross-stage no-reuse: load existing picks then run validateNoReuse twice.
   const { data: existing, error: exErr } = await supabase
     .from('stage_picks')
-    .select('stage_id, rider_id, stages!inner(edition_id, number, status)')
+    .select('stage_id, rider_id, hedge_rider_id, stages!inner(edition_id, number, status)')
     .eq('user_id', userId)
     .eq('stages.edition_id', stage.edition_id);
   if (exErr) return { ok: false, error: exErr.message };
 
-  type ExistingRow = { stage_id: string; rider_id: string; stages: { edition_id: string; number: number; status: string } };
-  const normalized: ExistingPick[] = (existing ?? []).map((p) => {
-    const row = p as unknown as ExistingRow;
-    return {
+  type ExistingRow = {
+    stage_id: string;
+    rider_id: string;
+    hedge_rider_id: string | null;
+    stages: { edition_id: string; number: number; status: string };
+  };
+  const flattened: ExistingPick[] = [];
+  for (const row of (existing ?? []) as unknown as ExistingRow[]) {
+    flattened.push({
       stage_id: row.stage_id,
       rider_id: row.rider_id,
       stage_status: row.stages.status as ExistingPick['stage_status'],
       stage_number: row.stages.number,
-    };
-  });
-
-  const reuseCheck = validateNoReuse(normalized, input.stageId, input.riderId);
-  if (!reuseCheck.ok) {
-    return { ok: false, error: `rider_already_used_on_stage_${reuseCheck.conflictingStageNumber}` };
+    });
+    if (row.hedge_rider_id) {
+      flattened.push({
+        stage_id: row.stage_id,
+        rider_id: row.hedge_rider_id,
+        stage_status: row.stages.status as ExistingPick['stage_status'],
+        stage_number: row.stages.number,
+      });
+    }
   }
 
-  // 4. Upsert.
+  const primaryReuse = validateNoReuse(flattened, input.stageId, input.primaryRiderId);
+  if (!primaryReuse.ok) {
+    return { ok: false, error: `rider_already_used_on_stage_${primaryReuse.conflictingStageNumber}` };
+  }
+  if (input.hedgeRiderId !== null) {
+    const hedgeReuse = validateNoReuse(flattened, input.stageId, input.hedgeRiderId);
+    if (!hedgeReuse.ok) {
+      return { ok: false, error: `rider_already_used_on_stage_${hedgeReuse.conflictingStageNumber}` };
+    }
+  }
+
+  // 5. Upsert the row with both fields.
   const { data: upserted, error: upErr } = await supabase
     .from('stage_picks')
     .upsert(
-      { user_id: userId, stage_id: input.stageId, rider_id: input.riderId },
+      {
+        user_id: userId,
+        stage_id: input.stageId,
+        rider_id: input.primaryRiderId,
+        hedge_rider_id: input.hedgeRiderId,
+      },
       { onConflict: 'user_id,stage_id' },
     )
     .select('id')
@@ -82,19 +125,21 @@ export async function submitStagePickCore(
   return { ok: true, data: { stagePickId: upserted.id } };
 }
 
-export async function submitStagePick(
+export async function submitStagePicks(
   _prev: ActionResult<{ stagePickId: string }> | null,
   formData: FormData,
 ): Promise<ActionResult<{ stagePickId: string }>> {
-  const parsed = submitStagePickSchema.safeParse({
+  const hedgeRaw = formData.get('hedgeRiderId');
+  const parsed = submitStagePicksSchema.safeParse({
     stageId: formData.get('stageId'),
-    riderId: formData.get('riderId'),
+    primaryRiderId: formData.get('primaryRiderId'),
+    hedgeRiderId: hedgeRaw === '' || hedgeRaw === null ? null : hedgeRaw,
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalid_input' };
 
   const { user } = await requireProfile();
   const supabase = await createClient();
-  return submitStagePickCore(supabase, user.id, parsed.data);
+  return submitStagePicksCore(supabase, user.id, parsed.data);
 }
 
 const submitGcPicksSchema = z.object({

@@ -5,7 +5,7 @@ export async function listActiveRiders(editionId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('riders')
-    .select('id, name, team, bib, pcs_slug, status')
+    .select('id, name, team, bib, pcs_slug, status, is_top_tier')
     .eq('edition_id', editionId)
     .order('bib', { ascending: true, nullsFirst: false });
   if (error) throw error;

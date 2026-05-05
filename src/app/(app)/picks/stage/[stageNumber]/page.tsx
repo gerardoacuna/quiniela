@@ -29,18 +29,23 @@ export default async function StagePickPage({
     getUserStagePicks(user.id, edition.id),
   ]);
 
-  const picksByRider = new Map<string, { stage_id: string; stage_number: number; stage_status: string }>();
+  // Map: rider_id → which other stage uses them (primary OR hedge), if any.
+  const usedByRider = new Map<string, { stage_id: string; stage_number: number; stage_status: string }>();
   for (const p of allPicks) {
-    // Supabase returns nested rows via inner join; access via the relation name.
     const stagesRel = (p as unknown as { stages: { number: number; status: string } }).stages;
-    picksByRider.set(p.rider_id, {
+    const meta = {
       stage_id: p.stage_id,
       stage_number: stagesRel.number,
       stage_status: stagesRel.status,
-    });
+    };
+    usedByRider.set(p.rider_id, meta);
+    const hedgeId = (p as unknown as { hedge_rider_id: string | null }).hedge_rider_id;
+    if (hedgeId) usedByRider.set(hedgeId, meta);
   }
 
-  const currentPickForThisStage = allPicks.find((p) => p.stage_id === stage.id);
+  const currentPickForThisStage = allPicks.find((p) => p.stage_id === stage.id) as
+    | (typeof allPicks[number] & { hedge_rider_id: string | null })
+    | undefined;
 
   return (
     <StagePickForm
@@ -50,15 +55,17 @@ export default async function StagePickPage({
       km={stage.km}
       doublePoints={stage.double_points}
       startTimeIso={stage.start_time}
-      initialSelectedRiderId={currentPickForThisStage?.rider_id ?? null}
+      initialPrimaryRiderId={currentPickForThisStage?.rider_id ?? null}
+      initialHedgeRiderId={currentPickForThisStage?.hedge_rider_id ?? null}
       riders={riders.map((r) => {
-        const used = picksByRider.get(r.id);
+        const used = usedByRider.get(r.id);
         return {
           id: r.id,
           name: r.name,
           team: r.team,
           bib: r.bib,
           status: r.status,
+          is_top_tier: r.is_top_tier,
           usedOnStageNumber:
             used && used.stage_id !== stage.id && used.stage_status !== 'cancelled'
               ? used.stage_number

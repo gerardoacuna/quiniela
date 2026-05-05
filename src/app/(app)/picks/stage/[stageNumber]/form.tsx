@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useActionState, useEffect, useRef } from 'react';
+import { useState, useActionState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { BibTile } from '@/components/design/bib-tile';
 import { TeamChip } from '@/components/design/team-chip';
 import { resolveTeam } from '@/components/design/teams';
 import { RiderPicker, type PickerRider } from '@/components/rider-picker';
-import { submitStagePick } from '@/lib/actions/picks';
+import { RiderSearchInput, filterRidersByQuery } from '@/components/rider-search-input';
+import { StickyActionBar } from '@/components/sticky-save-bar';
+import { submitStagePicks } from '@/lib/actions/picks';
 import { StagePickHeader } from './stage-pick-header';
 import type { ActionResult } from '@/lib/actions/result';
+
+type Tab = 'primary' | 'hedge';
+
+type FormRider = PickerRider & { is_top_tier: boolean };
 
 export function StagePickForm({
   stageId,
@@ -17,7 +23,8 @@ export function StagePickForm({
   km,
   doublePoints,
   startTimeIso,
-  initialSelectedRiderId,
+  initialPrimaryRiderId,
+  initialHedgeRiderId,
   riders,
 }: {
   stageId: string;
@@ -26,64 +33,83 @@ export function StagePickForm({
   km: number | null;
   doublePoints: boolean;
   startTimeIso: string;
-  initialSelectedRiderId: string | null;
-  riders: PickerRider[];
+  initialPrimaryRiderId: string | null;
+  initialHedgeRiderId: string | null;
+  riders: FormRider[];
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedRiderId);
-  const [savedRiderId, setSavedRiderId] = useState<string | null>(initialSelectedRiderId);
+  const [tab, setTab] = useState<Tab>('primary');
+  const [primaryId, setPrimaryId] = useState<string | null>(initialPrimaryRiderId);
+  const [hedgeId, setHedgeId] = useState<string | null>(initialHedgeRiderId);
+  const [savedPrimaryId, setSavedPrimaryId] = useState<string | null>(initialPrimaryRiderId);
+  const [savedHedgeId, setSavedHedgeId] = useState<string | null>(initialHedgeRiderId);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'available'>('all');
-  const pendingRiderIdRef = useRef<string | null>(null);
+
+  function handleTab(next: Tab) {
+    setTab(next);
+    setQuery('');
+  }
+
+  const pendingSubmissionRef = useRef<{ primary: string | null; hedge: string | null } | null>(null);
   const [state, formAction, pending] = useActionState(
-    submitStagePick,
+    submitStagePicks,
     null as ActionResult<{ stagePickId: string }> | null,
   );
 
-  // When the action resolves with ok=true, promote the pending rider to saved.
   useEffect(() => {
-    if (state?.ok && pendingRiderIdRef.current) {
-      setSavedRiderId(pendingRiderIdRef.current);
-      pendingRiderIdRef.current = null;
+    if (state?.ok && pendingSubmissionRef.current) {
+      setSavedPrimaryId(pendingSubmissionRef.current.primary);
+      setSavedHedgeId(pendingSubmissionRef.current.hedge);
+      pendingSubmissionRef.current = null;
     }
   }, [state]);
 
-  const savedRider = riders.find((r) => r.id === savedRiderId);
-  const selectedRider = riders.find((r) => r.id === selectedId);
+  const ridersById = useMemo(() => new Map(riders.map((r) => [r.id, r])), [riders]);
+  const savedPrimary = savedPrimaryId ? ridersById.get(savedPrimaryId) ?? null : null;
+  const savedHedge = savedHedgeId ? ridersById.get(savedHedgeId) ?? null : null;
+  const selectedPrimary = primaryId ? ridersById.get(primaryId) ?? null : null;
 
-  const isUsedElsewhere =
-    selectedId != null &&
-    selectedRider?.usedOnStageNumber != null &&
-    selectedId !== savedRiderId;
+  // Picker source rows — kind-aware filtering before search.
+  const pickerRiders: PickerRider[] = useMemo(() => {
+    const base = riders.filter((r) => r.status === 'active');
+    if (tab === 'primary') return base;
+    return base
+      .filter((r) => !r.is_top_tier)
+      .map((r) =>
+        r.id === primaryId
+          ? { ...r, disabledReason: 'Already your primary on this stage' }
+          : r,
+      );
+  }, [riders, tab, primaryId]);
 
-  const canSave = Boolean(selectedId) && !pending && selectedId !== savedRiderId && !isUsedElsewhere;
-
-  // Compute available count
-  const availableCount = riders.filter(
-    (r) => r.status === 'active' && (r.usedOnStageNumber == null || r.id === savedRiderId),
+  const tabSavedId = tab === 'primary' ? savedPrimaryId : savedHedgeId;
+  const availableCount = pickerRiders.filter(
+    (r) => r.usedOnStageNumber == null || r.id === tabSavedId,
   ).length;
 
-  // Filter riders
-  const filteredRiders = riders.filter((r) => {
-    if (filter === 'available') {
-      return r.status === 'active' && (r.usedOnStageNumber == null || r.id === savedRiderId);
-    }
-    return true;
-  });
+  const filteredRiders =
+    filter === 'available'
+      ? pickerRiders.filter((r) => r.usedOnStageNumber == null || r.id === tabSavedId)
+      : pickerRiders;
 
-  // Search within filtered
-  const q = query.trim().toLowerCase();
-  const displayRiders = q
-    ? filteredRiders.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          (r.team ?? '').toLowerCase().includes(q) ||
-          (r.bib != null && String(r.bib).includes(q)),
-      )
-    : filteredRiders;
+  const displayRiders = useMemo(
+    () => filterRidersByQuery(filteredRiders, query),
+    [filteredRiders, query],
+  );
+
+  const selectedId = tab === 'primary' ? primaryId : hedgeId;
+  const setSelectedId = tab === 'primary' ? setPrimaryId : setHedgeId;
+
+  const incompletePrimary = !primaryId;
+  const dirty = primaryId !== savedPrimaryId || hedgeId !== savedHedgeId;
+  const canSave = !incompletePrimary && dirty && !pending;
+
+  function handleRemoveHedge() {
+    setHedgeId(null);
+  }
 
   return (
     <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Back link */}
       <Link
         href="/picks"
         style={{
@@ -100,7 +126,6 @@ export function StagePickForm({
         ← Picks
       </Link>
 
-      {/* Stage pick header */}
       <StagePickHeader
         stageNumber={stageNumber}
         terrain={terrain}
@@ -109,118 +134,71 @@ export function StagePickForm({
         startTimeIso={startTimeIso}
       />
 
-      {/* Current pick summary */}
+      {/* Current picks card — always shows both saved values when set. */}
       <div
         style={{
-          background: savedRider ? 'var(--accent-soft)' : 'var(--surface-alt)',
-          border: `1px solid ${savedRider ? 'var(--accent)' : 'var(--hair)'}`,
+          background: 'var(--surface-alt)',
+          border: '1px solid var(--hair)',
           borderRadius: 'var(--radius)',
           padding: 12,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
         }}
       >
-        <div
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: 1.2,
-            color: savedRider ? 'var(--accent)' : 'var(--ink-mute)',
-            textTransform: 'uppercase',
-            fontWeight: 700,
-          }}
-        >
-          {savedRider ? 'Current pick' : 'No rider picked'}
-        </div>
-        {savedRider ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
-            <BibTile num={savedRider.bib} size={30} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>{savedRider.name}</div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: 'var(--ink-soft)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <TeamChip team={savedRider.team} size={10} />
-                {resolveTeam(savedRider.team).name}
-              </div>
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>Editable until lock</div>
-          </div>
-        ) : (
-          <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 4 }}>
-            Choose any active rider below. Riders already used on another counted stage are greyed out.
-          </div>
-        )}
+        <CurrentPickRow label="PRIMARY" rider={savedPrimary} />
+        <CurrentPickRow label="HEDGE" rider={savedHedge} />
       </div>
 
-      {/* Search + filters */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {/* Search bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'var(--surface)',
-            border: '1px solid var(--hair)',
-            borderRadius: 'var(--radius)',
-            padding: '10px 12px',
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--ink-mute)"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M16 16 L21 21" strokeLinecap="round" />
-          </svg>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, team, bib…"
-            style={{
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              color: 'var(--ink)',
-              flex: 1,
-              fontSize: 14,
-              fontFamily: 'var(--font-body)',
-            }}
-          />
-          {query && (
+      {/* Toggle */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 0,
+          background: 'var(--surface)',
+          border: '1px solid var(--hair)',
+          borderRadius: 'var(--radius)',
+          padding: 4,
+        }}
+      >
+        {(['primary', 'hedge'] as const).map((t) => {
+          const active = tab === t;
+          return (
             <button
+              key={t}
               type="button"
-              onClick={() => setQuery('')}
+              onClick={() => handleTab(t)}
               style={{
-                background: 'none',
+                padding: '8px 12px',
+                background: active ? 'var(--ink)' : 'transparent',
+                color: active ? 'var(--bg)' : 'var(--ink-soft)',
                 border: 'none',
-                color: 'var(--ink-mute)',
+                borderRadius: 'var(--radius)',
+                fontSize: 13,
+                fontWeight: 600,
                 cursor: 'pointer',
-                fontSize: 16,
-                padding: 0,
-                lineHeight: 1,
+                textTransform: 'capitalize',
               }}
-              aria-label="Clear search"
             >
-              ×
+              {t === 'primary' ? 'Primary' : 'Hedge'}
             </button>
-          )}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Filter chips */}
+      <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+        {tab === 'primary'
+          ? 'Top-10 finish scores 25/15/10/8/6/5/4/3/2/1.'
+          : 'Same scoring. Hedge must be a non-top-tier rider; same rider cannot also be your primary on this stage.'}
+      </div>
+
+      {/* Search + filter chips */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <RiderSearchInput value={query} onChange={setQuery} />
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
           {[
-            { k: 'all', label: `All · ${riders.length}` },
+            { k: 'all', label: `All · ${pickerRiders.length}` },
             { k: 'available', label: `Available · ${availableCount}` },
           ].map((f) => (
             <button
@@ -254,21 +232,28 @@ export function StagePickForm({
         disableInactive={true}
       />
 
-      {/* Sticky save CTA */}
-      <div
-        style={{
-          position: 'sticky',
-          bottom: 74,
-          background: 'var(--bg)',
-          borderTop: '1px solid var(--hair)',
-          padding: '10px 0 6px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          marginTop: 4,
-        }}
-      >
-        {selectedRider && selectedId !== savedRiderId && (
+      {/* Hedge tab "Remove hedge" affordance */}
+      {tab === 'hedge' && hedgeId !== null && (
+        <button
+          type="button"
+          onClick={handleRemoveHedge}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--ink-mute)',
+            cursor: 'pointer',
+            fontSize: 12,
+            padding: 4,
+            alignSelf: 'flex-start',
+          }}
+        >
+          × Remove hedge
+        </button>
+      )}
+
+      {/* Sticky save */}
+      <StickyActionBar style={{ borderTop: '1px solid var(--hair)' }}>
+        {selectedPrimary && primaryId !== savedPrimaryId && (
           <div
             style={{
               fontSize: 12,
@@ -276,21 +261,24 @@ export function StagePickForm({
               display: 'flex',
               alignItems: 'center',
               gap: 8,
+              marginBottom: 8,
             }}
           >
-            <TeamChip team={selectedRider.team} size={10} />
-            Save <strong style={{ color: 'var(--ink)' }}>{selectedRider.name}</strong> for Stage{' '}
+            <TeamChip team={selectedPrimary.team} size={10} />
+            Save <strong style={{ color: 'var(--ink)' }}>{selectedPrimary.name}</strong> as primary for Stage{' '}
             {stageNumber}
           </div>
         )}
+
         <form action={formAction}>
           <input type="hidden" name="stageId" value={stageId} />
-          <input type="hidden" name="riderId" value={selectedId ?? ''} />
+          <input type="hidden" name="primaryRiderId" value={primaryId ?? ''} />
+          <input type="hidden" name="hedgeRiderId" value={hedgeId ?? ''} />
           <button
             type="submit"
             disabled={!canSave}
             onClick={() => {
-              if (selectedId) pendingRiderIdRef.current = selectedId;
+              if (canSave) pendingSubmissionRef.current = { primary: primaryId, hedge: hedgeId };
             }}
             style={{
               width: '100%',
@@ -305,12 +293,57 @@ export function StagePickForm({
               transition: 'background 0.15s',
             }}
           >
-            {pending ? 'Saving…' : selectedId === savedRiderId ? 'Pick saved ✓' : 'Save pick'}
+            {pending ? 'Saving…' : !dirty ? 'Picks saved ✓' : 'Save picks'}
           </button>
           {state && !state.ok && (
             <p style={{ fontSize: 13, color: 'var(--accent)', marginTop: 8 }}>{state.error}</p>
           )}
         </form>
+      </StickyActionBar>
+    </div>
+  );
+}
+
+function CurrentPickRow({ label, rider }: { label: string; rider: FormRider | null }) {
+  if (!rider) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: 0.55 }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 1.4,
+            color: 'var(--ink-mute)',
+            width: 64,
+          }}
+        >
+          {label}
+        </span>
+        <BibTile num={null} size={26} />
+        <span style={{ fontSize: 12, color: 'var(--ink-mute)' }}>No pick</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: 1.4,
+          color: 'var(--ink-mute)',
+          width: 64,
+        }}
+      >
+        {label}
+      </span>
+      <BibTile num={rider.bib} size={26} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>{rider.name}</div>
+        <div style={{ fontSize: 11, color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <TeamChip team={rider.team} size={10} />
+          {resolveTeam(rider.team).name}
+        </div>
       </div>
     </div>
   );
