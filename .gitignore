@@ -47,6 +47,9 @@ supabase/.temp/
 # Brainstorm artifacts
 .superpowers/
 
+# Claude Code session state
+.claude/
+
 # Env
 .env.local
 .env*.local
