@@ -386,6 +386,7 @@ export type Database = {
           created_at: string
           edition_id: string
           id: string
+          is_top_tier: boolean
           name: string
           pcs_slug: string
           status: Database["public"]["Enums"]["rider_status"]
@@ -396,6 +397,7 @@ export type Database = {
           created_at?: string
           edition_id: string
           id?: string
+          is_top_tier?: boolean
           name: string
           pcs_slug: string
           status?: Database["public"]["Enums"]["rider_status"]
@@ -406,6 +408,7 @@ export type Database = {
           created_at?: string
           edition_id?: string
           id?: string
+          is_top_tier?: boolean
           name?: string
           pcs_slug?: string
           status?: Database["public"]["Enums"]["rider_status"]
