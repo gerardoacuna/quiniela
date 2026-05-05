@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { requireProfile } from '@/lib/auth/require-user';
 import { getHomeData } from '@/lib/queries/home';
 import { createClient } from '@/lib/supabase/server';
-import { stagePoints } from '@/lib/scoring';
+import { stagePoints, stageRowPoints } from '@/lib/scoring';
 import { HeroNextStage } from './hero-next-stage';
 import { StageTimeline } from '@/components/stage-timeline';
 import { StandingCard } from './standing-card';
@@ -64,29 +64,42 @@ export default async function HomePage() {
     };
   });
 
-  // Recent scored picks (last 3, most recent first)
-  const scoredPicks = picks
+  // Recent scored picks (last 3, most recent first). Hedge picks contribute their own
+  // entry per (stage, kind), so a single stage can produce up to two recent rows.
+  const scoredPicks: RecentPick[] = picks
     .filter((p) => p.stages.status === 'published')
-    .map((p) => {
+    .flatMap((p) => {
       const stageResults = results.filter((r) => r.stage_id === p.stage_id);
-      const pts = stagePoints(
-        { rider_id: p.rider_id },
-        { double_points: p.stages.double_points, status: 'published' },
+      const stageMeta = { double_points: p.stages.double_points, status: 'published' as const };
+      const breakdown = stageRowPoints(
+        { rider_id: p.rider_id, hedge_rider_id: p.hedge_rider_id },
+        stageMeta,
         stageResults,
       );
-      const resultRow = stageResults.find((r) => r.rider_id === p.rider_id);
-      return {
-        stageN: p.stages.number,
-        rider: {
-          name: p.riders.name,
-          team: p.riders.team,
+      const primaryRow = stageResults.find((r) => r.rider_id === p.rider_id);
+      const out: RecentPick[] = [
+        {
+          stageN: p.stages.number,
+          kind: 'primary',
+          rider: { name: p.riders.name, team: p.riders.team },
+          position: primaryRow?.position ?? null,
+          points: breakdown.primary,
         },
-        position: resultRow?.position ?? null,
-        points: pts,
-      };
+      ];
+      if (p.hedge_rider_id && p.hedge_rider) {
+        const hedgeRow = stageResults.find((r) => r.rider_id === p.hedge_rider_id);
+        out.push({
+          stageN: p.stages.number,
+          kind: 'hedge',
+          rider: { name: p.hedge_rider.name, team: p.hedge_rider.team },
+          position: hedgeRow?.position ?? null,
+          points: breakdown.hedge,
+        });
+      }
+      return out;
     })
-    .sort((a, b) => b.stageN - a.stageN)
-    .slice(0, 3) satisfies RecentPick[];
+    .sort((a, b) => b.stageN - a.stageN || (a.kind === 'primary' ? -1 : 1))
+    .slice(0, 3);
 
   // Around-me board rows (for TopFiveCard when rank > 5)
   let aroundMe = board.slice(0, 0);

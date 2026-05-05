@@ -18,6 +18,7 @@ export type HomeStage = {
 export type HomePick = {
   stage_id: string;
   rider_id: string;
+  hedge_rider_id: string | null;
   stages: {
     number: number;
     status: string;
@@ -30,6 +31,13 @@ export type HomePick = {
     bib: number | null;
     status: string;
   };
+  hedge_rider: {
+    id: string;
+    name: string;
+    team: string | null;
+    bib: number | null;
+    status: string;
+  } | null;
 };
 
 export type HomeResult = {
@@ -60,7 +68,7 @@ export async function getHomeData(userId: string): Promise<HomeData | null> {
       .order('number', { ascending: true }),
     supabase
       .from('stage_picks')
-      .select('stage_id, rider_id, stages!inner(number, status, double_points), riders!inner(id, name, team, bib, status)')
+      .select('stage_id, rider_id, hedge_rider_id, stages!inner(number, status, double_points), riders!inner(id, name, team, bib, status), hedge_rider:riders!stage_picks_hedge_rider_id_fkey(id, name, team, bib, status)')
       .eq('user_id', userId),
     supabase
       .from('stage_results')

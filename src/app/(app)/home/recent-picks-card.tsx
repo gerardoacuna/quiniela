@@ -5,6 +5,7 @@ import { ordinal } from '@/components/design/time';
 
 export type RecentPick = {
   stageN: number;
+  kind: 'primary' | 'hedge';
   rider: {
     name: string;
     team: string | null;
@@ -57,7 +58,7 @@ export function RecentPicksCard({ recent }: { recent: RecentPick[] }) {
           const hit = r.points > 0;
           return (
             <Link
-              key={r.stageN}
+              key={`${r.stageN}-${r.kind}`}
               href={`/stage/${r.stageN}`}
               style={{
                 display: 'flex',
@@ -82,6 +83,17 @@ export function RecentPicksCard({ recent }: { recent: RecentPick[] }) {
                 flexShrink: 0,
               }}>
                 S{r.stageN}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: 1,
+                color: r.kind === 'hedge' ? 'var(--accent)' : 'var(--ink-mute)',
+                width: 14,
+                flexShrink: 0,
+                fontWeight: 700,
+              }}>
+                {r.kind === 'primary' ? 'P' : 'H'}
               </div>
               <TeamChip team={r.rider.team} size={10} />
               <div style={{
