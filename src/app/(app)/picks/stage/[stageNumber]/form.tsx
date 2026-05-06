@@ -189,7 +189,7 @@ export function StagePickForm({
 
       <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
         {tab === 'primary'
-          ? 'Top-10 finish scores 25/15/10/8/6/5/4/3/2/1.'
+          ? 'Top-10 finish scores 25/20/16/13/11/9/7/5/3/2.'
           : 'Same scoring. Underdog must be a non-top-tier rider; same rider cannot also be your primary on this stage.'}
       </div>
 

@@ -13,12 +13,12 @@ const RESULTS = [
 describe('stageRowPoints', () => {
   it('returns primary only when underdog is null', () => {
     expect(stageRowPoints({ rider_id: 'P3', underdog_rider_id: null }, STAGE, RESULTS))
-      .toEqual({ primary: 10, underdog: 0, total: 10 });
+      .toEqual({ primary: 16, underdog: 0, total: 16 });
   });
 
   it('sums primary + underdog when both score', () => {
     expect(stageRowPoints({ rider_id: 'P3', underdog_rider_id: 'P7' }, STAGE, RESULTS))
-      .toEqual({ primary: 10, underdog: 4, total: 14 });
+      .toEqual({ primary: 16, underdog: 7, total: 23 });
   });
 
   it('returns 0 + 0 when neither scores', () => {
@@ -27,9 +27,9 @@ describe('stageRowPoints', () => {
   });
 
   it('doubles both contributions on a 2x stage', () => {
-    // P1 base=25, P7 base=4. Doubled: 50 + 8 = 58.
+    // P1 base=25, P7 base=7. Doubled: 50 + 14 = 64.
     expect(stageRowPoints({ rider_id: 'P1', underdog_rider_id: 'P7' }, STAGE_2X, RESULTS))
-      .toEqual({ primary: 50, underdog: 8, total: 58 });
+      .toEqual({ primary: 50, underdog: 14, total: 64 });
   });
 
   it('returns zero when stage status is not published', () => {

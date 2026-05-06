@@ -3,8 +3,7 @@ import { Badge } from '@/components/design/badge';
 import { TerrainGlyph, type Terrain } from '@/components/design/terrain-glyph';
 import { TeamChip } from '@/components/design/team-chip';
 import { fmtDate, ordinal } from '@/components/design/time';
-
-const POINTS_TABLE = [25, 15, 10, 8, 6, 5, 4, 3, 2, 1];
+import { STAGE_POINT_TABLE } from '@/lib/scoring';
 
 function terrainLabel(terrain: string): string {
   if (terrain === 'itt') return 'ITT';
@@ -34,7 +33,7 @@ interface StageRowProps {
 
 function pickPoints(position: number | undefined, doublePoints: boolean): number {
   if (!position || position < 1 || position > 10) return 0;
-  const base = POINTS_TABLE[position - 1] ?? 0;
+  const base = STAGE_POINT_TABLE[position - 1] ?? 0;
   return doublePoints ? base * 2 : base;
 }
 

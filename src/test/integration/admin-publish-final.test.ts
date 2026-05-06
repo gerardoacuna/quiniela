@@ -78,7 +78,7 @@ d('publishFinalCore (admin)', () => {
 
     const a = createAdminClient();
     const { data } = await a.from('leaderboard_view').select('*').eq('user_id', player.userId);
-    expect(data?.[0]?.jersey_points).toBe(50);
+    expect(data?.[0]?.jersey_points).toBe(25);
   });
 
   it('rejects duplicate riders in GC', async () => {
@@ -116,6 +116,6 @@ d('publishFinalCore (admin)', () => {
     expect(res.ok).toBe(true);
 
     const { data } = await a.from('leaderboard_view').select('*').eq('user_id', player.userId);
-    expect(data?.[0]?.jersey_points).toBe(100);
+    expect(data?.[0]?.jersey_points).toBe(50);
   });
 });

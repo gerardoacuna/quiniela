@@ -19,8 +19,8 @@ describe('stagePoints', () => {
     expect(stagePoints({ rider_id: 'r1' }, { double_points: false, status: 'published' }, results)).toBe(25);
   });
 
-  it('awards 1 point for 10th place', () => {
-    expect(stagePoints({ rider_id: 'r10' }, { double_points: false, status: 'published' }, results)).toBe(1);
+  it('awards 2 points for 10th place', () => {
+    expect(stagePoints({ rider_id: 'r10' }, { double_points: false, status: 'published' }, results)).toBe(2);
   });
 
   it('awards 0 points when rider is outside top 10', () => {
@@ -29,7 +29,7 @@ describe('stagePoints', () => {
 
   it('doubles points on double_points stages', () => {
     expect(stagePoints({ rider_id: 'r1' }, { double_points: true, status: 'published' }, results)).toBe(50);
-    expect(stagePoints({ rider_id: 'r5' }, { double_points: true, status: 'published' }, results)).toBe(12);
+    expect(stagePoints({ rider_id: 'r5' }, { double_points: true, status: 'published' }, results)).toBe(22);
   });
 
   it('returns 0 when stage is not published', () => {
@@ -37,7 +37,7 @@ describe('stagePoints', () => {
     expect(stagePoints({ rider_id: 'r1' }, { double_points: false, status: 'cancelled' as const }, results)).toBe(0);
   });
 
-  it('STAGE_POINT_TABLE is 10 entries, descending from 25 to 1', () => {
-    expect(STAGE_POINT_TABLE).toEqual([25, 15, 10, 8, 6, 5, 4, 3, 2, 1]);
+  it('STAGE_POINT_TABLE is 10 entries, descending from 25 to 2', () => {
+    expect(STAGE_POINT_TABLE).toEqual([25, 20, 16, 13, 11, 9, 7, 5, 3, 2]);
   });
 });

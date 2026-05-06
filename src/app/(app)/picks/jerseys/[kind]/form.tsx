@@ -72,7 +72,7 @@ export function JerseyKindPickForm({
       <PageHeading
         eyebrow="Pre-race"
         title={KIND_LABEL[kind]}
-        sub="50 pts if correct · 0 otherwise."
+        sub="25 pts if correct · 0 otherwise."
       />
 
       {isLocked && (

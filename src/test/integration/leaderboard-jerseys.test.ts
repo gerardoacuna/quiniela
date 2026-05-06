@@ -26,7 +26,7 @@ d('leaderboard_view jersey scoring', () => {
     await player.cleanup();
   });
 
-  it('awards 100 pts when both jersey picks match published winners', async () => {
+  it('awards 50 pts when both jersey picks match published winners', async () => {
     await a.from('jersey_picks').insert([
       { user_id: player.userId, edition_id: EDITION, kind: 'points', rider_id: R_POG },
       { user_id: player.userId, edition_id: EDITION, kind: 'white',  rider_id: R_AYU },
@@ -36,10 +36,10 @@ d('leaderboard_view jersey scoring', () => {
       { edition_id: EDITION, kind: 'white_jersey',  position: 1, rider_id: R_AYU, status: 'published' },
     ]);
     const { data } = await a.from('leaderboard_view').select('jersey_points').eq('user_id', player.userId);
-    expect(data?.[0]?.jersey_points).toBe(100);
+    expect(data?.[0]?.jersey_points).toBe(50);
   });
 
-  it('awards 50 pts when only one jersey matches', async () => {
+  it('awards 25 pts when only one jersey matches', async () => {
     await a.from('jersey_picks').delete().eq('user_id', player.userId);
     await a.from('final_classifications').delete().eq('edition_id', EDITION);
     await a.from('jersey_picks').insert([
@@ -51,7 +51,7 @@ d('leaderboard_view jersey scoring', () => {
       { edition_id: EDITION, kind: 'white_jersey',  position: 1, rider_id: R_AYU, status: 'published' },
     ]);
     const { data } = await a.from('leaderboard_view').select('jersey_points').eq('user_id', player.userId);
-    expect(data?.[0]?.jersey_points).toBe(50);
+    expect(data?.[0]?.jersey_points).toBe(25);
   });
 
   it('awards 0 pts when neither matches', async () => {

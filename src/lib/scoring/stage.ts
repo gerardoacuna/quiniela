@@ -1,4 +1,4 @@
-export const STAGE_POINT_TABLE: readonly number[] = [25, 15, 10, 8, 6, 5, 4, 3, 2, 1] as const;
+export const STAGE_POINT_TABLE: readonly number[] = [25, 20, 16, 13, 11, 9, 7, 5, 3, 2] as const;
 
 export type StageStatusForScoring = 'upcoming' | 'locked' | 'results_draft' | 'published' | 'cancelled';
 

@@ -9,8 +9,7 @@ import { Badge } from '@/components/design/badge';
 import { BibTile } from '@/components/design/bib-tile';
 import { TeamChip } from '@/components/design/team-chip';
 import { ordinal } from '@/components/design/time';
-
-const POINTS_TABLE = [25, 15, 10, 8, 6, 5, 4, 3, 2, 1];
+import { STAGE_POINT_TABLE } from '@/lib/scoring';
 
 export default async function StagePage({
   params,
@@ -155,7 +154,7 @@ function ResultsCard({
       </div>
       <div>
         {results.map((r) => {
-          const pts = (POINTS_TABLE[r.position - 1] ?? 0) * multiplier;
+          const pts = (STAGE_POINT_TABLE[r.position - 1] ?? 0) * multiplier;
           const isMine = r.rider.id === myPickRiderId;
           const pickers = groupedPicks.get(r.rider.id)?.names.length ?? 0;
           return (
@@ -278,7 +277,7 @@ function WhoPickedWhomCard({
       <div style={{ borderTop: '1px solid var(--hair)' }}>
         {grouped.map((g) => {
           const pos = resultsMap.get(g.rider.id);
-          const pts = pos != null ? (POINTS_TABLE[pos - 1] ?? 0) * multiplier : 0;
+          const pts = pos != null ? (STAGE_POINT_TABLE[pos - 1] ?? 0) * multiplier : 0;
           return (
             <div
               key={g.rider.id}
