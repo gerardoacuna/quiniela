@@ -100,7 +100,10 @@ export async function getMeData(userId: string): Promise<MeData | null> {
       .maybeSingle(),
     supabase
       .from('stage_picks')
-      .select('stage_id, rider_id, underdog_rider_id, stages!inner(number, double_points, status, start_time, km, terrain), riders!inner(id, name, team, bib, status), underdog_rider:riders!stage_picks_underdog_rider_id_fkey(id, name, team, bib, status)')
+      // Both joins MUST name the FK constraint — there are two FKs from
+      // stage_picks to riders (rider_id, underdog_rider_id), so a bare
+      // `riders!inner(...)` is ambiguous and Supabase returns null.
+      .select('stage_id, rider_id, underdog_rider_id, stages!inner(number, double_points, status, start_time, km, terrain), riders!stage_picks_rider_id_fkey!inner(id, name, team, bib, status), underdog_rider:riders!stage_picks_underdog_rider_id_fkey(id, name, team, bib, status)')
       .eq('user_id', userId),
     supabase
       .from('gc_picks')

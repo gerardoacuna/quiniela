@@ -22,7 +22,10 @@ export async function getPicksIndex(userId: string) {
       .order('number', { ascending: true }),
     supabase
       .from('stage_picks')
-      .select('stage_id, rider_id, underdog_rider_id, stages!inner(number, status, double_points), riders!inner(id, name, team, bib, status), underdog_rider:riders!stage_picks_underdog_rider_id_fkey(id, name, team, bib, status)')
+      // Both joins MUST name the FK constraint — there are two FKs from
+      // stage_picks to riders (rider_id, underdog_rider_id), so a bare
+      // `riders!inner(...)` is ambiguous and Supabase returns null.
+      .select('stage_id, rider_id, underdog_rider_id, stages!inner(number, status, double_points), riders!stage_picks_rider_id_fkey!inner(id, name, team, bib, status), underdog_rider:riders!stage_picks_underdog_rider_id_fkey(id, name, team, bib, status)')
       .eq('user_id', userId),
     supabase
       .from('stage_results')
