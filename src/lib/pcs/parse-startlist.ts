@@ -8,8 +8,10 @@ export function parseStartlist(html: string): PcsStartlistEntry[] {
 
   // PCS startlist structure: ul.startlist_v4 > li (one per team)
   // Each team li contains:
-  //   - a.team (with full URL href like https://...procyclingstats.com/team/slug-YEAR)
-  //   - ul > li (one per rider) containing a[href*="/rider/"] and span.bib
+  //   - a.team (href to team page)
+  //   - ul > li (one per rider) containing a rider-link and span.bib
+  // PCS started serving relative hrefs ("rider/kaden-groves") in late April 2026;
+  // older snapshots used absolute ("https://www.procyclingstats.com/rider/..."). Both must work.
   $('ul.startlist_v4 > li').each((_, teamLi) => {
     const $teamLi = $(teamLi);
 
@@ -19,12 +21,11 @@ export function parseStartlist(html: string): PcsStartlistEntry[] {
     $teamLi.find('ul > li').each((_, riderLi) => {
       const $riderLi = $(riderLi);
 
-      const riderAnchor = $riderLi.find('a[href*="/rider/"]').first();
+      const riderAnchor = $riderLi.find('a[href^="rider/"], a[href*="/rider/"]').first();
       if (riderAnchor.length === 0) return;
 
       const href = riderAnchor.attr('href') ?? '';
-      // href looks like "https://www.procyclingstats.com/rider/primoz-roglic"
-      const riderMatch = href.match(/\/rider\/([^/]+)/);
+      const riderMatch = href.match(/(?:^|\/)rider\/([^/]+)/);
       if (!riderMatch) return;
       const rider_slug = riderMatch[1];
 
