@@ -17,9 +17,9 @@ export function gcPoints(picks: readonly GcPick[], actual: readonly GcActual[]):
   for (const pick of picks) {
     const exactRider = exactByPos.get(pick.position);
     if (exactRider && exactRider === pick.rider_id) {
-      total += 30;
+      total += 50;
     } else if (podium.has(pick.rider_id)) {
-      total += 10;
+      total += 25;
     }
   }
   return total;

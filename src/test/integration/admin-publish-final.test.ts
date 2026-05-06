@@ -55,7 +55,7 @@ d('publishFinalCore (admin)', () => {
     await player.cleanup();
   });
 
-  it('publishing GC matching player picks awards 90 pts', async () => {
+  it('publishing GC matching player picks awards 150 pts', async () => {
     const c = await userClient(admin.email, admin.password);
     const res = await publishFinalCore(c, admin.userId, {
       editionId: EDITION,
@@ -65,7 +65,7 @@ d('publishFinalCore (admin)', () => {
 
     const a = createAdminClient();
     const { data } = await a.from('leaderboard_view').select('*').eq('user_id', player.userId);
-    expect(data?.[0]?.gc_points).toBe(90);
+    expect(data?.[0]?.gc_points).toBe(150);
   });
 
   it('publishing jersey matching player pick awards 30 pts', async () => {

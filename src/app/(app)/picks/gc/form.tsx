@@ -116,7 +116,7 @@ export function GcPickForm({
       <PageHeading
         eyebrow="Pre-race"
         title="GC Top 3"
-        sub="30 pts exact position · 10 pts in podium · scored after final GC."
+        sub="50 pts exact position · 25 pts wrong-position podium · scored after final GC."
       />
 
       {/* Locked notice */}
@@ -223,11 +223,11 @@ export function GcPickForm({
           lineHeight: 1.5,
         }}
       >
-        <strong style={{ color: 'var(--ink)', fontSize: 13 }}>Scoring max 90 pts.</strong>
+        <strong style={{ color: 'var(--ink)', fontSize: 13 }}>Scoring max 150 pts.</strong>
         <br />
-        · 30 pts if your pick finishes at that exact position
+        · 50 pts if your pick finishes at that exact position
         <br />
-        · 10 pts if your pick finishes in the actual top 3 at a different position
+        · 25 pts if your pick finishes in the actual top 3 at a different position
         <br />
         · 0 pts otherwise
       </div>
