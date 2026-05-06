@@ -148,7 +148,10 @@ export default async function HomePage() {
       {nextStage ? (
         <HeroNextStage
           stage={nextStage}
-          pick={myPickForNext ? { rider: myPickForNext.riders } : null}
+          pick={{
+            primary: myPickForNext?.riders ?? null,
+            underdog: myPickForNext?.underdog_rider ?? null,
+          }}
           nextStageHref={`/picks/stage/${nextStage.number}`}
           stageHref={`/stage/${nextStage.number}`}
         />

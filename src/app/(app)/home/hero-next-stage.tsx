@@ -25,14 +25,17 @@ export type HeroStage = {
   km: number;
 };
 
+export type HeroPickRider = {
+  id: string;
+  name: string;
+  team: string | null;
+  bib: number | null;
+};
+
 export type HeroPick = {
-  rider: {
-    id: string;
-    name: string;
-    team: string | null;
-    bib: number | null;
-  };
-} | null;
+  primary: HeroPickRider | null;
+  underdog: HeroPickRider | null;
+};
 
 export function HeroNextStage({
   stage,
@@ -124,67 +127,9 @@ export function HeroNextStage({
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <StageProfile terrain={stage.terrain} w={160} h={36} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {pick ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <BibTile num={pick.rider.bib} size={34} />
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{
-                  fontSize: 10,
-                  letterSpacing: 1.2,
-                  color: 'var(--ink-mute)',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                }}>
-                  Your pick
-                </div>
-                <div style={{
-                  fontWeight: 600,
-                  fontSize: 15,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}>
-                  {pick.rider.name}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <TeamChip team={pick.rider.team} size={10} />
-                  <span>{pick.rider.team ?? ''}</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                width: 34,
-                height: 40,
-                border: '1.5px dashed var(--accent)',
-                borderRadius: 2,
-                display: 'grid',
-                placeItems: 'center',
-                color: 'var(--accent)',
-              }}>
-                ?
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  fontSize: 10,
-                  letterSpacing: 1.2,
-                  color: 'var(--ink-mute)',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                }}>
-                  Your pick
-                </div>
-                <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--accent)' }}>
-                  No rider yet
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                  You&apos;re missing points.
-                </div>
-              </div>
-            </div>
-          )}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <HeroPickRow kind="primary" rider={pick.primary} />
+          <HeroPickRow kind="underdog" rider={pick.underdog} />
         </div>
       </div>
 
@@ -209,7 +154,7 @@ export function HeroNextStage({
             textDecoration: 'none',
           }}
         >
-          {pick ? 'Change pick' : 'Pick a rider'} →
+          {(pick.primary || pick.underdog) ? 'Change picks' : 'Make picks'} →
         </Link>
         <Link
           href={stageHref}
@@ -234,5 +179,78 @@ export function HeroNextStage({
         </Link>
       </div>
     </section>
+  );
+}
+
+function HeroPickRow({ kind, rider }: { kind: 'primary' | 'underdog'; rider: HeroPickRider | null }) {
+  const label = kind === 'primary' ? 'PRIMARY' : 'UNDERDOG';
+
+  if (rider) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <BibTile num={rider.bib} size={34} />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{
+            fontSize: 10,
+            letterSpacing: 1.2,
+            color: 'var(--ink-mute)',
+            fontFamily: 'var(--font-mono)',
+            textTransform: 'uppercase',
+          }}>
+            {label}
+          </div>
+          <div style={{
+            fontWeight: 600,
+            fontSize: 15,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}>
+            {rider.name}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <TeamChip team={rider.team} size={10} />
+            <span>{rider.team ?? ''}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const headline = kind === 'primary' ? 'No rider yet' : 'No underdog yet';
+  const sub = kind === 'primary' ? "You're missing points." : 'Optional hedge for the same stage.';
+  const headlineColor = kind === 'primary' ? 'var(--accent)' : 'var(--ink)';
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        width: 34,
+        height: 40,
+        border: '1.5px dashed var(--accent)',
+        borderRadius: 2,
+        display: 'grid',
+        placeItems: 'center',
+        color: 'var(--accent)',
+      }}>
+        ?
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{
+          fontSize: 10,
+          letterSpacing: 1.2,
+          color: 'var(--ink-mute)',
+          fontFamily: 'var(--font-mono)',
+          textTransform: 'uppercase',
+        }}>
+          {label}
+        </div>
+        <div style={{ fontWeight: 600, fontSize: 15, color: headlineColor }}>
+          {headline}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+          {sub}
+        </div>
+      </div>
+    </div>
   );
 }
