@@ -632,7 +632,9 @@ export type Database = {
     }
     Functions: {
       edition_started: { Args: { edition_id: string }; Returns: boolean }
+      gc_submission_count: { Args: { edition_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
+      jersey_submission_count: { Args: { edition_id: string }; Returns: number }
     }
     Enums: {
       classification_kind: "gc" | "points_jersey" | "white_jersey"
