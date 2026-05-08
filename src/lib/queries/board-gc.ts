@@ -109,14 +109,16 @@ export function buildGcByRider(
   const formatNames = (
     list: Array<{ userId: string; displayName: string }>,
   ): string[] => {
+    const YOU = ' YOU'; // sentinel; ' ' cannot appear in profiles.display_name
     const labelled = list.map((p) =>
-      p.userId === currentUserId ? 'You' : p.displayName,
+      p.userId === currentUserId ? YOU : p.displayName,
     );
-    return labelled.sort((a, b) => {
-      if (a === 'You') return -1;
-      if (b === 'You') return 1;
+    const sorted = labelled.sort((a, b) => {
+      if (a === YOU) return -1;
+      if (b === YOU) return 1;
       return a.localeCompare(b);
     });
+    return sorted.map((s) => (s === YOU ? 'You' : s));
   };
 
   return Array.from(byRider.values())

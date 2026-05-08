@@ -117,4 +117,22 @@ describe('buildGcByRider', () => {
     const out = buildGcByRider(rows, CARO);
     expect(out[0].p1Names).toEqual(['Alice', 'Bob']);
   });
+
+  it("does not conflate the current user with another user whose display_name is literally 'You'", () => {
+    // ALICE is current user. BOB's display_name is literally 'You'. CARO is unrelated.
+    // With the bug: BOB and ALICE would both be pinned first ('You' strings),
+    // then CARO alphabetical — order: ['You', 'You', 'Caro'].
+    // With the fix: only ALICE is pinned first via userId; BOB's 'You' string
+    // gets alphabetical sort against 'Caro'. 'C' < 'Y' so CARO comes before BOB.
+    // Order: ['You' (Alice), 'Caro', 'You' (Bob)]. The 2nd element is 'Caro'.
+    const rows: GcRawRow[] = [
+      pick(ALICE, 'Alice', 1, POG),
+      pick(BOB,   'You',   1, POG),
+      pick(CARO,  'Caro',  1, POG),
+    ];
+    const out = buildGcByRider(rows, ALICE);
+    // Current user is pinned first, then alphabetical. 'C' < 'Y' so 'Caro'
+    // comes before BOB's 'You' display name.
+    expect(out[0].p1Names).toEqual(['You', 'Caro', 'You']);
+  });
 });
