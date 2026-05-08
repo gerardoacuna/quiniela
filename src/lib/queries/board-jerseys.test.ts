@@ -65,11 +65,10 @@ describe('buildJerseysByPlayer', () => {
 describe('buildJerseysByRider', () => {
   it("groups by kind; per-kind outer order = pickers desc; chips alphabetical with 'You' first", () => {
     const rows: JerseyRawRow[] = [
-      // Points: Pog x3, Rog x1
+      // Points: Pog x3 (all three players)
       pick(ALICE, 'Alice', 'points', POG),
       pick(BOB,   'Bob',   'points', POG),
       pick(CARO,  'Caro',  'points', POG),
-      // (one rogue Roglič points pick to test outer order)
       // White: Vin x2 (Alice, Caro)
       pick(ALICE, 'Alice', 'white',  VIN),
       pick(CARO,  'Caro',  'white',  VIN),
