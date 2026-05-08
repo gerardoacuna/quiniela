@@ -87,10 +87,11 @@ export async function getStageDetail(
 
   const rawPicks = (allPicks ?? []) as unknown as RawPickRow[];
 
-  // RLS already gates visibility: pre-stage-lock the SELECT returns only the
-  // caller's row. We don't add an `if (!isLocked) return []` guard here — that
-  // would let app-level drift desync from DB rules. The "locked" flag downstream
-  // controls UI rendering only.
+  // RLS gates visibility: pre-stage-lock the SELECT returns only the caller's
+  // row. The `isLocked ? ... : []` guard at the return below is belt-and-
+  // suspenders — RLS is the source of truth, but the app-level gate prevents a
+  // misconfigured RLS policy from silently leaking picks. Pre-existing behavior;
+  // kept on purpose.
   const allPicksFlat: StageDetailData['allPicks'] = rawPicks.flatMap((p) => {
     const out: StageDetailData['allPicks'] = [
       {
