@@ -848,6 +848,20 @@ describe('buildJerseysByRider', () => {
   it('handles empty input', () => {
     expect(buildJerseysByRider([], ALICE)).toEqual({ points: [], white: [] });
   });
+
+  it("does not conflate the current user with another user whose display_name is literally 'You'", () => {
+    // ALICE is current user. BOB's display_name is literally 'You'. CARO is unrelated.
+    // The current user must be pinned first by userId, not by string equality —
+    // otherwise BOB would also pin first because his name is 'You'.
+    const rows: JerseyRawRow[] = [
+      pick(ALICE, 'Alice', 'points', POG),
+      pick(BOB,   'You',   'points', POG),
+      pick(CARO,  'Caro',  'points', POG),
+    ];
+    const out = buildJerseysByRider(rows, ALICE);
+    // Current user pinned first, then alphabetical: 'Caro' (C) < 'You' (Y).
+    expect(out.points[0].names).toEqual(['You', 'Caro', 'You']);
+  });
 });
 ```
 
@@ -888,14 +902,21 @@ export function buildJerseysByRider(
 
     const formatNames = (
       list: Array<{ userId: string; displayName: string }>,
-    ): string[] =>
-      list
-        .map((p) => (p.userId === currentUserId ? 'You' : p.displayName))
-        .sort((a, b) => {
-          if (a === 'You') return -1;
-          if (b === 'You') return 1;
-          return a.localeCompare(b);
-        });
+    ): string[] => {
+      // Sentinel sorts the current user first by userId match, not by display
+      // string. This avoids conflating a user whose display_name is literally
+      // 'You' with the actual viewer.
+      const YOU = ' YOU';
+      const labelled = list.map((p) =>
+        p.userId === currentUserId ? YOU : p.displayName,
+      );
+      const sorted = labelled.sort((a, b) => {
+        if (a === YOU) return -1;
+        if (b === YOU) return 1;
+        return a.localeCompare(b);
+      });
+      return sorted.map((s) => (s === YOU ? 'You' : s));
+    };
 
     return Array.from(byRider.values())
       .map((e) => ({ rider: e.rider, names: formatNames(e.pickers) }))
