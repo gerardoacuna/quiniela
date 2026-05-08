@@ -32,16 +32,24 @@ export default async function StagePage({
   const scored = stage.status === 'published';
   const multiplier = stage.double_points ? 2 : 1;
 
-  // Group picks by rider for the "who picked whom" section
+  // Group picks by rider for the "who picked whom" section.
+  // A rider can appear once as primary by Alice and once as underdog by Bob —
+  // they end up in the same rider row with two differently-tagged chips.
+  type Picker = { name: string; kind: 'primary' | 'underdog' };
   const grouped = new Map<
     string,
-    { rider: StageDetailData['allPicks'][number]['rider']; names: string[] }
+    { rider: StageDetailData['allPicks'][number]['rider']; pickers: Picker[] }
   >();
   for (const p of detail.allPicks) {
-    if (!grouped.has(p.rider.id)) grouped.set(p.rider.id, { rider: p.rider, names: [] });
-    grouped.get(p.rider.id)!.names.push(p.userId === user.id ? 'You' : p.displayName);
+    if (!grouped.has(p.rider.id)) grouped.set(p.rider.id, { rider: p.rider, pickers: [] });
+    grouped.get(p.rider.id)!.pickers.push({
+      name: p.userId === user.id ? 'You' : p.displayName,
+      kind: p.kind,
+    });
   }
-  const groupedList = Array.from(grouped.values()).sort((a, b) => b.names.length - a.names.length);
+  const groupedList = Array.from(grouped.values()).sort(
+    (a, b) => b.pickers.length - a.pickers.length,
+  );
 
   return (
     <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -112,7 +120,10 @@ function ResultsCard({
   multiplier: number;
   groupedPicks: Map<
     string,
-    { rider: StageDetailData['allPicks'][number]['rider']; names: string[] }
+    {
+      rider: StageDetailData['allPicks'][number]['rider'];
+      pickers: Array<{ name: string; kind: 'primary' | 'underdog' }>;
+    }
   >;
   myPickRiderId: string | null;
   doublePoints: boolean;
@@ -156,7 +167,7 @@ function ResultsCard({
         {results.map((r) => {
           const pts = (STAGE_POINT_TABLE[r.position - 1] ?? 0) * multiplier;
           const isMine = r.rider.id === myPickRiderId;
-          const pickers = groupedPicks.get(r.rider.id)?.names.length ?? 0;
+          const pickers = groupedPicks.get(r.rider.id)?.pickers.length ?? 0;
           return (
             <div
               key={r.position}
@@ -244,7 +255,10 @@ function WhoPickedWhomCard({
   resultsMap,
   multiplier,
 }: {
-  grouped: Array<{ rider: StageDetailData['allPicks'][number]['rider']; names: string[] }>;
+  grouped: Array<{
+    rider: StageDetailData['allPicks'][number]['rider'];
+    pickers: Array<{ name: string; kind: 'primary' | 'underdog' }>;
+  }>;
   scored: boolean;
   resultsMap: Map<string, number>;
   multiplier: number;
@@ -294,7 +308,7 @@ function WhoPickedWhomCard({
               <div style={{ flex: 1, minWidth: 120 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{g.rider.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>
-                  {g.names.length} picker{g.names.length === 1 ? '' : 's'}
+                  {g.pickers.length} picker{g.pickers.length === 1 ? '' : 's'}
                 </div>
               </div>
               {scored && (
@@ -312,24 +326,40 @@ function WhoPickedWhomCard({
               <div
                 style={{ flexBasis: '100%', display: 'flex', flexWrap: 'wrap', gap: 4 }}
               >
-                {g.names.slice(0, 12).map((name) => (
+                {g.pickers.slice(0, 12).map((p, i) => (
                   <span
-                    key={name}
+                    key={`${p.name}-${p.kind}-${i}`}
                     style={{
                       fontSize: 10,
                       padding: '2px 6px',
                       borderRadius: 999,
                       background: 'var(--surface-alt)',
-                      color: name === 'You' ? 'var(--accent)' : 'var(--ink-soft)',
-                      fontWeight: name === 'You' ? 700 : 500,
+                      color: p.name === 'You' ? 'var(--accent)' : 'var(--ink-soft)',
+                      fontWeight: p.name === 'You' ? 700 : 500,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
                     }}
                   >
-                    {name}
+                    {p.name}
+                    {p.kind === 'underdog' && (
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 9,
+                          letterSpacing: 0.6,
+                          color: 'var(--ink-mute)',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        · underdog
+                      </span>
+                    )}
                   </span>
                 ))}
-                {g.names.length > 12 && (
+                {g.pickers.length > 12 && (
                   <span style={{ fontSize: 10, padding: '2px 6px', color: 'var(--ink-mute)' }}>
-                    +{g.names.length - 12}
+                    +{g.pickers.length - 12}
                   </span>
                 )}
               </div>
