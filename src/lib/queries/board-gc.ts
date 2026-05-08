@@ -137,10 +137,7 @@ export function buildGcByRider(
 
 // ---- I/O wrapper ---------------------------------------------------------
 
-export async function getBoardGcData(
-  editionId: string,
-  _currentUserId: string,
-): Promise<BoardGcData> {
+export async function getBoardGcData(editionId: string): Promise<BoardGcData> {
   const supabase = await createClient();
 
   const [picksRes, countRes, stage1Res] = await Promise.all([
