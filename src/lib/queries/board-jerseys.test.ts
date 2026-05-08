@@ -61,3 +61,64 @@ describe('buildJerseysByPlayer', () => {
     expect(buildJerseysByPlayer([], [])).toEqual([]);
   });
 });
+
+describe('buildJerseysByRider', () => {
+  it("groups by kind; per-kind outer order = pickers desc; chips alphabetical with 'You' first", () => {
+    const rows: JerseyRawRow[] = [
+      // Points: Pog x3, Rog x1
+      pick(ALICE, 'Alice', 'points', POG),
+      pick(BOB,   'Bob',   'points', POG),
+      pick(CARO,  'Caro',  'points', POG),
+      // (one rogue Roglič points pick to test outer order)
+      // White: Vin x2 (Alice, Caro)
+      pick(ALICE, 'Alice', 'white',  VIN),
+      pick(CARO,  'Caro',  'white',  VIN),
+    ];
+    const out = buildJerseysByRider(rows, ALICE);
+
+    // Points: only Pog appears (no rogue rows in this test)
+    expect(out.points.map((r) => r.rider.id)).toEqual(['r-pog']);
+    expect(out.points[0].names).toEqual(['You', 'Bob', 'Caro']);
+
+    // White: only Vin appears
+    expect(out.white.map((r) => r.rider.id)).toEqual(['r-vin']);
+    expect(out.white[0].names).toEqual(['You', 'Caro']);
+  });
+
+  it('orders riders by pick count desc, alphabetical name on ties', () => {
+    const rows: JerseyRawRow[] = [
+      pick(ALICE, 'Alice', 'points', POG),
+      pick(BOB,   'Bob',   'points', ROG),
+      pick(CARO,  'Caro',  'points', POG), // Pog gets 2 pickers, Rog 1
+    ];
+    const out = buildJerseysByRider(rows, ALICE);
+    expect(out.points.map((r) => r.rider.id)).toEqual(['r-pog', 'r-rog']);
+  });
+
+  it("doesn't list a player's name for a kind they didn't fill", () => {
+    const rows: JerseyRawRow[] = [
+      pick(ALICE, 'Alice', 'points', POG),
+      // Alice has no white pick
+    ];
+    const out = buildJerseysByRider(rows, ALICE);
+    expect(out.white).toEqual([]);
+  });
+
+  it('handles empty input', () => {
+    expect(buildJerseysByRider([], ALICE)).toEqual({ points: [], white: [] });
+  });
+
+  it("does not conflate the current user with another user whose display_name is literally 'You'", () => {
+    // ALICE is current user. BOB's display_name is literally 'You'. CARO is unrelated.
+    // The current user must be pinned first by userId, not by string equality —
+    // otherwise BOB would also pin first because his name is 'You'.
+    const rows: JerseyRawRow[] = [
+      pick(ALICE, 'Alice', 'points', POG),
+      pick(BOB,   'You',   'points', POG),
+      pick(CARO,  'Caro',  'points', POG),
+    ];
+    const out = buildJerseysByRider(rows, ALICE);
+    // Current user pinned first, then alphabetical: 'Caro' (C) < 'You' (Y).
+    expect(out.points[0].names).toEqual(['You', 'Caro', 'You']);
+  });
+});

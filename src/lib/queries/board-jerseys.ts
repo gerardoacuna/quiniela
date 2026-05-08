@@ -83,11 +83,60 @@ export function buildJerseysByPlayer(
 }
 
 export function buildJerseysByRider(
-  _rows: JerseyRawRow[],
-  _currentUserId: string,
+  rows: JerseyRawRow[],
+  currentUserId: string,
 ): BoardJerseysByRiderGrouped {
-  // Implemented in Task 6.
-  return { points: [], white: [] };
+  const collect = (kind: JerseyKind): BoardJerseysByRiderEntry[] => {
+    const byRider = new Map<
+      string,
+      {
+        rider: JerseyRider;
+        pickers: Array<{ userId: string; displayName: string }>;
+      }
+    >();
+    for (const r of rows) {
+      if (r.kind !== kind) continue;
+      let entry = byRider.get(r.riders.id);
+      if (!entry) {
+        entry = { rider: r.riders, pickers: [] };
+        byRider.set(r.riders.id, entry);
+      }
+      entry.pickers.push({
+        userId: r.user_id,
+        displayName: r.profiles.display_name,
+      });
+    }
+
+    const formatNames = (
+      list: Array<{ userId: string; displayName: string }>,
+    ): string[] => {
+      // Sentinel sorts the current user first by userId match, not by display
+      // string. This avoids conflating a user whose display_name is literally
+      // 'You' with the actual viewer.
+      const YOU = ' YOU';
+      const labelled = list.map((p) =>
+        p.userId === currentUserId ? YOU : p.displayName,
+      );
+      const sorted = labelled.sort((a, b) => {
+        if (a === YOU) return -1;
+        if (b === YOU) return 1;
+        return a.localeCompare(b);
+      });
+      return sorted.map((s) => (s === YOU ? 'You' : s));
+    };
+
+    return Array.from(byRider.values())
+      .map((e) => ({ rider: e.rider, names: formatNames(e.pickers) }))
+      .sort((a, b) => {
+        if (a.names.length !== b.names.length) return b.names.length - a.names.length;
+        return a.rider.name.localeCompare(b.rider.name);
+      });
+  };
+
+  return {
+    points: collect('points'),
+    white: collect('white'),
+  };
 }
 
 // ---- I/O wrapper ---------------------------------------------------------
