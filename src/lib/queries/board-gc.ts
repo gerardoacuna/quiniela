@@ -81,11 +81,57 @@ export function buildGcByPlayer(
 }
 
 export function buildGcByRider(
-  _rows: GcRawRow[],
-  _currentUserId: string,
+  rows: GcRawRow[],
+  currentUserId: string,
 ): BoardGcByRiderRow[] {
-  // Implemented in Task 3.
-  return [];
+  // Map<rider_id, { rider, p1, p2, p3 }> where each p* is an array of { userId, displayName }.
+  const byRider = new Map<
+    string,
+    {
+      rider: GcRider;
+      p1: Array<{ userId: string; displayName: string }>;
+      p2: Array<{ userId: string; displayName: string }>;
+      p3: Array<{ userId: string; displayName: string }>;
+    }
+  >();
+
+  for (const r of rows) {
+    let entry = byRider.get(r.riders.id);
+    if (!entry) {
+      entry = { rider: r.riders, p1: [], p2: [], p3: [] };
+      byRider.set(r.riders.id, entry);
+    }
+    const slot =
+      r.position === 1 ? entry.p1 : r.position === 2 ? entry.p2 : entry.p3;
+    slot.push({ userId: r.user_id, displayName: r.profiles.display_name });
+  }
+
+  const formatNames = (
+    list: Array<{ userId: string; displayName: string }>,
+  ): string[] => {
+    const labelled = list.map((p) =>
+      p.userId === currentUserId ? 'You' : p.displayName,
+    );
+    return labelled.sort((a, b) => {
+      if (a === 'You') return -1;
+      if (b === 'You') return 1;
+      return a.localeCompare(b);
+    });
+  };
+
+  return Array.from(byRider.values())
+    .map((e) => ({
+      rider: e.rider,
+      p1Names: formatNames(e.p1),
+      p2Names: formatNames(e.p2),
+      p3Names: formatNames(e.p3),
+    }))
+    .sort((a, b) => {
+      const totalA = a.p1Names.length + a.p2Names.length + a.p3Names.length;
+      const totalB = b.p1Names.length + b.p2Names.length + b.p3Names.length;
+      if (totalA !== totalB) return totalB - totalA;
+      return a.rider.name.localeCompare(b.rider.name);
+    });
 }
 
 // ---- I/O wrapper ---------------------------------------------------------

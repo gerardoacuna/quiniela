@@ -64,3 +64,57 @@ describe('buildGcByPlayer', () => {
     expect(buildGcByPlayer([], [])).toEqual([]);
   });
 });
+
+describe('buildGcByRider', () => {
+  it("groups picker names by rider+position; outer order = total pickers desc; chips alphabetical with 'You' first", () => {
+    // Three players. Pog gets picked at p1 by all three; Vin at p2 by two; Rog at p3 by one.
+    const rows: GcRawRow[] = [
+      pick(ALICE, 'Alice', 1, POG),
+      pick(BOB,   'Bob',   1, POG),
+      pick(CARO,  'Caro',  1, POG),
+      pick(ALICE, 'Alice', 2, VIN),
+      pick(BOB,   'Bob',   2, VIN),
+      pick(CARO,  'Caro',  3, ROG),
+    ];
+    const out = buildGcByRider(rows, ALICE);
+    // Outer order: Pog (3 pickers) > Vin (2) > Rog (1)
+    expect(out.map((r) => r.rider.id)).toEqual(['r-pog', 'r-vin', 'r-rog']);
+
+    // Pog at p1: You, Bob, Caro (You pinned first, then alphabetical)
+    expect(out[0].p1Names).toEqual(['You', 'Bob', 'Caro']);
+    expect(out[0].p2Names).toEqual([]);
+    expect(out[0].p3Names).toEqual([]);
+
+    // Vin at p2: You, Bob (You pinned first)
+    expect(out[1].p1Names).toEqual([]);
+    expect(out[1].p2Names).toEqual(['You', 'Bob']);
+    expect(out[1].p3Names).toEqual([]);
+
+    // Rog at p3: Caro alone
+    expect(out[2].p3Names).toEqual(['Caro']);
+  });
+
+  it('breaks ties on total pickers by rider name ascending', () => {
+    // Two riders each picked once at p1 — outer order should be alphabetical.
+    const rows: GcRawRow[] = [
+      pick(ALICE, 'Alice', 1, VIN),
+      pick(BOB,   'Bob',   1, POG),
+    ];
+    const out = buildGcByRider(rows, ALICE);
+    expect(out.map((r) => r.rider.name)).toEqual(['Pogačar', 'Vingegaard']);
+  });
+
+  it('handles empty input', () => {
+    expect(buildGcByRider([], ALICE)).toEqual([]);
+  });
+
+  it("renders names alphabetically when current user is not among pickers", () => {
+    // Current user is Caro, who didn't pick Pog at p1.
+    const rows: GcRawRow[] = [
+      pick(ALICE, 'Alice', 1, POG),
+      pick(BOB,   'Bob',   1, POG),
+    ];
+    const out = buildGcByRider(rows, CARO);
+    expect(out[0].p1Names).toEqual(['Alice', 'Bob']);
+  });
+});
