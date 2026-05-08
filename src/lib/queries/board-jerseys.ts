@@ -141,10 +141,40 @@ export function buildJerseysByRider(
 
 // ---- I/O wrapper ---------------------------------------------------------
 
-export async function getBoardJerseysData(
-  _editionId: string,
-): Promise<BoardJerseysData> {
-  // Implemented in Task 7.
-  await createClient();
-  throw new Error('not implemented');
+export async function getBoardJerseysData(editionId: string): Promise<BoardJerseysData> {
+  const supabase = await createClient();
+
+  const [picksRes, countRes, stage1Res] = await Promise.all([
+    supabase
+      .from('jersey_picks')
+      .select(
+        'user_id, kind, profiles!inner(display_name), riders!inner(id, name, team, bib)',
+      )
+      .eq('edition_id', editionId),
+    supabase.rpc('jersey_submission_count', { edition_id: editionId }),
+    supabase
+      .from('stages')
+      .select('start_time')
+      .eq('edition_id', editionId)
+      .eq('number', 1)
+      .maybeSingle(),
+  ]);
+
+  if (picksRes.error) throw picksRes.error;
+  if (stage1Res.error) throw stage1Res.error;
+
+  let submissionCount = 0;
+  if (countRes.error) {
+    console.error('[board-jerseys] jersey_submission_count RPC failed:', countRes.error);
+  } else {
+    submissionCount = countRes.data ?? 0;
+  }
+
+  const isLocked = stage1Res.data
+    ? new Date(stage1Res.data.start_time).getTime() <= Date.now()
+    : false;
+
+  const rawRows = (picksRes.data ?? []) as unknown as JerseyRawRow[];
+
+  return { isLocked, submissionCount, rawRows };
 }
