@@ -163,6 +163,10 @@ export async function getBoardJerseysData(editionId: string): Promise<BoardJerse
   if (picksRes.error) throw picksRes.error;
   if (stage1Res.error) throw stage1Res.error;
 
+  // The submission-count RPC is informational, not load-bearing for visibility.
+  // If it fails, log and degrade to 0 rather than throwing — the placeholder
+  // still renders ("0 of N players have locked in") and the post-lock branch
+  // doesn't use this field at all.
   let submissionCount = 0;
   if (countRes.error) {
     console.error('[board-jerseys] jersey_submission_count RPC failed:', countRes.error);
@@ -170,10 +174,13 @@ export async function getBoardJerseysData(editionId: string): Promise<BoardJerse
     submissionCount = countRes.data ?? 0;
   }
 
+  // isLocked: stage 1 exists AND its start_time has passed.
   const isLocked = stage1Res.data
     ? new Date(stage1Res.data.start_time).getTime() <= Date.now()
     : false;
 
+  // Cast through the raw shape — Supabase's generated types nest joined tables
+  // as objects rather than plain columns; matches the pattern in stage-detail.ts.
   const rawRows = (picksRes.data ?? []) as unknown as JerseyRawRow[];
 
   return { isLocked, submissionCount, rawRows };
