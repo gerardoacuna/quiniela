@@ -765,7 +765,6 @@ export function buildJerseysByRider(
 
 export async function getBoardJerseysData(
   _editionId: string,
-  _currentUserId: string,
 ): Promise<BoardJerseysData> {
   // Implemented in Task 7.
   await createClient();
@@ -959,13 +958,10 @@ EOF
 
 - [ ] **Step 7.1: Implement `getBoardJerseysData`**
 
-Replace the stub in `src/lib/queries/board-jerseys.ts`:
+Replace the single-param stub in `src/lib/queries/board-jerseys.ts` with the full implementation:
 
 ```ts
-export async function getBoardJerseysData(
-  editionId: string,
-  _currentUserId: string,
-): Promise<BoardJerseysData> {
+export async function getBoardJerseysData(editionId: string): Promise<BoardJerseysData> {
   const supabase = await createClient();
 
   const [picksRes, countRes, stage1Res] = await Promise.all([
@@ -1146,7 +1142,7 @@ export async function EveryonesGc({
   totalPlayers: number;
   playerOrder: string[];
 }) {
-  const data = await getBoardGcData(editionId, currentUserId);
+  const data = await getBoardGcData(editionId);
 
   if (!data.isLocked) {
     return (
@@ -1484,7 +1480,7 @@ export async function EveryonesJerseys({
   totalPlayers: number;
   playerOrder: string[];
 }) {
-  const data = await getBoardJerseysData(editionId, currentUserId);
+  const data = await getBoardJerseysData(editionId);
 
   if (!data.isLocked) {
     return (
