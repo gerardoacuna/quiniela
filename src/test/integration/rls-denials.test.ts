@@ -147,17 +147,25 @@ d('RLS denials', () => {
 
   describe('GC + jersey reveal', () => {
     let editionStage1OriginalStartTime: string | null = null;
+    let editionStage1OriginalStatus:
+      | 'upcoming'
+      | 'locked'
+      | 'results_draft'
+      | 'published'
+      | 'cancelled'
+      | null = null;
 
     beforeAll(async () => {
       // Push stage 1 into the future so edition_started() returns false.
       const admin = createAdminClient();
       const { data } = await admin
         .from('stages')
-        .select('start_time')
+        .select('start_time, status')
         .eq('edition_id', EDITION)
         .eq('number', 1)
         .single();
       editionStage1OriginalStartTime = data?.start_time ?? null;
+      editionStage1OriginalStatus = data?.status ?? null;
 
       await admin
         .from('stages')
@@ -180,12 +188,15 @@ d('RLS denials', () => {
     });
 
     afterAll(async () => {
-      // Restore stage 1 to its seeded start_time.
+      // Restore stage 1 to its seeded start_time AND status.
       const admin = createAdminClient();
-      if (editionStage1OriginalStartTime) {
+      if (editionStage1OriginalStartTime && editionStage1OriginalStatus) {
         await admin
           .from('stages')
-          .update({ start_time: editionStage1OriginalStartTime })
+          .update({
+            start_time: editionStage1OriginalStartTime,
+            status: editionStage1OriginalStatus,
+          })
           .eq('edition_id', EDITION)
           .eq('number', 1);
       }
@@ -204,12 +215,14 @@ d('RLS denials', () => {
       const cA = await userClient(userA.email, userA.password);
       const cB = await userClient(userB.email, userB.password);
 
-      await cA.from('gc_picks').insert([
+      const { error: aInsertErr } = await cA.from('gc_picks').insert([
         { user_id: userA.userId, edition_id: EDITION, position: 1, rider_id: RIDER_POG },
       ]);
-      await cB.from('gc_picks').insert([
+      expect(aInsertErr).toBeNull();
+      const { error: bInsertErr } = await cB.from('gc_picks').insert([
         { user_id: userB.userId, edition_id: EDITION, position: 1, rider_id: RIDER_AYU },
       ]);
+      expect(bInsertErr).toBeNull();
 
       // A reads gc_picks scoped to user B → empty (RLS hides B's row).
       const { data: aSeesB } = await cA
@@ -239,12 +252,14 @@ d('RLS denials', () => {
       const cA = await userClient(userA.email, userA.password);
       const cB = await userClient(userB.email, userB.password);
 
-      await cA.from('jersey_picks').insert({
+      const { error: aInsertErr } = await cA.from('jersey_picks').insert({
         user_id: userA.userId, edition_id: EDITION, kind: 'points', rider_id: RIDER_POG,
       });
-      await cB.from('jersey_picks').insert({
+      expect(aInsertErr).toBeNull();
+      const { error: bInsertErr } = await cB.from('jersey_picks').insert({
         user_id: userB.userId, edition_id: EDITION, kind: 'white', rider_id: RIDER_EVE,
       });
+      expect(bInsertErr).toBeNull();
 
       const { data: aSeesB } = await cA
         .from('jersey_picks')
@@ -304,6 +319,15 @@ d('RLS denials', () => {
         .delete()
         .in('user_id', [userA.userId, userB.userId])
         .eq('stage_id', STAGE_9);
+    });
+
+    afterAll(async () => {
+      // Restore Stage 9 to the seeded state (upcoming, future start_time)
+      // so downstream test files don't inherit a locked Stage 9.
+      await setStageState(STAGE_9, {
+        start_time: new Date(Date.now() + 30 * 86400_000).toISOString(),
+        status: 'upcoming',
+      });
     });
 
     it('pre-stage-start: user A cannot read user B underdog_rider_id', async () => {
