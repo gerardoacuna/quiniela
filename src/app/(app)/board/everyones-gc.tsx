@@ -279,9 +279,9 @@ function RiderGroupedCard({ rows }: { rows: BoardGcByRiderRow[] }) {
                     >
                       {label}
                     </span>
-                    {names.map((name) => (
+                    {names.map((name, i) => (
                       <span
-                        key={name}
+                        key={`${name}-${i}`}
                         style={{
                           fontSize: 10,
                           padding: '2px 6px',

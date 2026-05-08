@@ -271,9 +271,9 @@ function RiderGroupedCard({
                 gap: 4,
               }}
             >
-              {r.names.map((name) => (
+              {r.names.map((name, i) => (
                 <span
-                  key={name}
+                  key={`${name}-${i}`}
                   style={{
                     fontSize: 10,
                     padding: '2px 6px',
