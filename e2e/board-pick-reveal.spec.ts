@@ -16,21 +16,30 @@ const admin = createSupabaseJs<Database>(
 );
 
 test.describe('board pick reveal', () => {
+  test.describe.configure({ mode: 'serial' });
   let viewer: Awaited<ReturnType<typeof createTestUser>>;
   let other:  Awaited<ReturnType<typeof createTestUser>>;
   let originalStage1Start: string | null = null;
+  let originalStage1Status:
+    | 'upcoming'
+    | 'locked'
+    | 'results_draft'
+    | 'published'
+    | 'cancelled'
+    | null = null;
 
   test.beforeAll(async () => {
     viewer = await createTestUser('player');
     other  = await createTestUser('player');
 
-    // Capture stage 1's seeded start_time so we can restore it.
+    // Capture stage 1's seeded start_time AND status so we can restore both.
     const { data } = await admin
       .from('stages')
-      .select('start_time')
+      .select('start_time, status')
       .eq('id', STAGE_1_ID)
       .single();
     originalStage1Start = data?.start_time ?? null;
+    originalStage1Status = data?.status ?? null;
 
     // Seed GC + jersey picks for both users.
     await admin.from('gc_picks').insert([
@@ -53,10 +62,13 @@ test.describe('board pick reveal', () => {
     await admin.from('gc_picks').delete().in('user_id', [viewer.userId, other.userId]);
     await admin.from('jersey_picks').delete().in('user_id', [viewer.userId, other.userId]);
     await admin.from('stage_picks').delete().in('user_id', [viewer.userId, other.userId]);
-    if (originalStage1Start) {
+    if (originalStage1Start && originalStage1Status) {
       await admin
         .from('stages')
-        .update({ start_time: originalStage1Start })
+        .update({
+          start_time: originalStage1Start,
+          status: originalStage1Status,
+        })
         .eq('id', STAGE_1_ID);
     }
     await viewer.cleanup();
