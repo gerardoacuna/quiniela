@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { requireProfile } from '@/lib/auth/require-user';
 import { getActiveEdition } from '@/lib/queries/stages';
@@ -5,6 +6,9 @@ import { createClient } from '@/lib/supabase/server';
 import { assignRanks } from '@/lib/scoring';
 import type { LeaderboardRow } from '@/lib/scoring';
 import { BoardClient } from './client';
+import { BoardSectionSkeleton } from './board-section-skeleton';
+import { EveryonesGc } from './everyones-gc';
+import { EveryonesJerseys } from './everyones-jerseys';
 
 export default async function BoardPage() {
   const { user } = await requireProfile();
@@ -32,6 +36,32 @@ export default async function BoardPage() {
     }));
 
   const ranked = assignRanks(rows);
+  const playerOrder = ranked.map((r) => r.user_id);
+  const totalPlayers = ranked.length;
 
-  return <BoardClient rows={ranked} currentUserId={user.id} />;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <BoardClient rows={ranked} currentUserId={user.id} />
+
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Suspense fallback={<BoardSectionSkeleton />}>
+          <EveryonesGc
+            editionId={edition.id}
+            currentUserId={user.id}
+            totalPlayers={totalPlayers}
+            playerOrder={playerOrder}
+          />
+        </Suspense>
+
+        <Suspense fallback={<BoardSectionSkeleton />}>
+          <EveryonesJerseys
+            editionId={edition.id}
+            currentUserId={user.id}
+            totalPlayers={totalPlayers}
+            playerOrder={playerOrder}
+          />
+        </Suspense>
+      </div>
+    </div>
+  );
 }

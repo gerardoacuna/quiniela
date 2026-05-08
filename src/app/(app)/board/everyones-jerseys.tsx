@@ -170,7 +170,7 @@ function PlayerGroupedCard({
                   fontSize: 11,
                 }}
               >
-                didn't lock in
+                didn&apos;t lock in
               </span>
             ) : (
               <>
