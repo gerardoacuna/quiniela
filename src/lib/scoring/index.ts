@@ -1,4 +1,4 @@
-export { stagePoints, STAGE_POINT_TABLE } from './stage';
+export { stagePoints, pointsForFinish, STAGE_POINT_TABLE } from './stage';
 export type { StageMeta, StageResult, PickRef, StageStatusForScoring } from './stage';
 export { stageRowPoints } from './stage-row';
 export type { StageRowPick, StageRowPointsResult } from './stage-row';

@@ -19,7 +19,12 @@ export interface PickRef {
 export function stagePoints(pick: PickRef, stage: StageMeta, results: readonly StageResult[]): number {
   if (stage.status !== 'published') return 0;
   const hit = results.find(r => r.rider_id === pick.rider_id);
-  if (!hit || hit.position < 1 || hit.position > 10) return 0;
-  const base = STAGE_POINT_TABLE[hit.position - 1];
-  return stage.double_points ? base * 2 : base;
+  if (!hit) return 0;
+  return pointsForFinish(hit.position, stage.double_points);
+}
+
+export function pointsForFinish(position: number | null | undefined, doublePoints: boolean): number {
+  if (position == null || position < 1 || position > 10) return 0;
+  const base = STAGE_POINT_TABLE[position - 1];
+  return doublePoints ? base * 2 : base;
 }

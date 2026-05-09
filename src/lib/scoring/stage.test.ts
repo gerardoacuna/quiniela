@@ -1,5 +1,28 @@
 import { describe, it, expect } from 'vitest';
-import { stagePoints, STAGE_POINT_TABLE } from './stage';
+import { stagePoints, pointsForFinish, STAGE_POINT_TABLE } from './stage';
+
+describe('pointsForFinish', () => {
+  it('returns the base table value for valid positions', () => {
+    expect(pointsForFinish(1, false)).toBe(25);
+    expect(pointsForFinish(5, false)).toBe(11);
+    expect(pointsForFinish(10, false)).toBe(2);
+  });
+
+  it('doubles points when doublePoints is true', () => {
+    expect(pointsForFinish(1, true)).toBe(50);
+    expect(pointsForFinish(5, true)).toBe(22);
+    expect(pointsForFinish(10, true)).toBe(4);
+  });
+
+  it('returns 0 for null/undefined and out-of-range positions', () => {
+    expect(pointsForFinish(null, false)).toBe(0);
+    expect(pointsForFinish(null, true)).toBe(0);
+    expect(pointsForFinish(undefined, false)).toBe(0);
+    expect(pointsForFinish(0, false)).toBe(0);
+    expect(pointsForFinish(11, false)).toBe(0);
+    expect(pointsForFinish(11, true)).toBe(0);
+  });
+});
 
 describe('stagePoints', () => {
   const results = [

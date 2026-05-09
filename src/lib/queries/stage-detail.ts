@@ -33,6 +33,10 @@ export interface StageDetailData {
     kind: 'primary' | 'underdog';
     rider: StageRider;
   }>;
+  participants: Array<{
+    userId: string;
+    displayName: string;
+  }>;
   myPickRiderId: string | null;
   isLocked: boolean;
 }
@@ -43,34 +47,43 @@ export async function getStageDetail(
 ): Promise<StageDetailData> {
   const supabase = await createClient();
 
-  const [{ data: stage }, { data: results }, { data: allPicks }, { data: myPick }] =
-    await Promise.all([
-      supabase
-        .from('stages')
-        .select('id, number, start_time, status, counts_for_scoring, double_points, terrain, km')
-        .eq('id', stageId)
-        .maybeSingle(),
-      supabase
-        .from('stage_results')
-        .select('position, riders!inner(id, name, team, bib, status)')
-        .eq('stage_id', stageId)
-        .eq('status', 'published')
-        .order('position'),
-      supabase
-        .from('stage_picks')
-        .select(
-          'user_id, profiles!inner(display_name), ' +
-            'primary_rider:riders!stage_picks_rider_id_fkey!inner(id, name, team, bib, status), ' +
-            'underdog_rider:riders!stage_picks_underdog_rider_id_fkey(id, name, team, bib, status)',
-        )
-        .eq('stage_id', stageId),
-      supabase
-        .from('stage_picks')
-        .select('rider_id')
-        .eq('stage_id', stageId)
-        .eq('user_id', currentUserId)
-        .maybeSingle(),
-    ]);
+  const [
+    { data: stage },
+    { data: results },
+    { data: allPicks },
+    { data: myPick },
+    { data: participantsRaw },
+  ] = await Promise.all([
+    supabase
+      .from('stages')
+      .select('id, number, start_time, status, counts_for_scoring, double_points, terrain, km')
+      .eq('id', stageId)
+      .maybeSingle(),
+    supabase
+      .from('stage_results')
+      .select('position, riders!inner(id, name, team, bib, status)')
+      .eq('stage_id', stageId)
+      .eq('status', 'published')
+      .order('position'),
+    supabase
+      .from('stage_picks')
+      .select(
+        'user_id, profiles!inner(display_name), ' +
+          'primary_rider:riders!stage_picks_rider_id_fkey!inner(id, name, team, bib, status), ' +
+          'underdog_rider:riders!stage_picks_underdog_rider_id_fkey(id, name, team, bib, status)',
+      )
+      .eq('stage_id', stageId),
+    supabase
+      .from('stage_picks')
+      .select('rider_id')
+      .eq('stage_id', stageId)
+      .eq('user_id', currentUserId)
+      .maybeSingle(),
+    supabase
+      .from('profiles')
+      .select('id, display_name')
+      .is('deleted_at', null),
+  ]);
 
   const isLocked = stage ? new Date(stage.start_time).getTime() <= Date.now() : false;
 
@@ -124,6 +137,12 @@ export async function getStageDetail(
     return out;
   });
 
+  type RawProfile = { id: string; display_name: string };
+  const participants = ((participantsRaw ?? []) as RawProfile[]).map((p) => ({
+    userId: p.id,
+    displayName: p.display_name,
+  }));
+
   return {
     stage: stage as StageDetailData['stage'],
     results: ((results ?? []) as unknown as RawResult[]).map((r) => ({
@@ -137,6 +156,7 @@ export async function getStageDetail(
       },
     })),
     allPicks: isLocked ? allPicksFlat : [],
+    participants,
     myPickRiderId: myPick?.rider_id ?? null,
     isLocked,
   };
