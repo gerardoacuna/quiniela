@@ -35,11 +35,11 @@ export function PreRaceStrip({
   const white  = jerseyPicks.find((j) => j.kind === 'white') ?? null;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-      {/* GC Top 3 card */}
-      <MiniPickCard label="GC Top 3" locked={locked} href={locked ? undefined : '/picks/gc'}>
+      {/* GC Top 5 card */}
+      <MiniPickCard label="GC Top 5" locked={locked} href={locked ? undefined : '/picks/gc'}>
         {gcPicks.length > 0 ? (
           <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            {gcPicks.slice(0, 3).map((g, i) => (
+            {gcPicks.slice(0, 5).map((g, i) => (
               <div
                 key={g.rider_id}
                 style={{

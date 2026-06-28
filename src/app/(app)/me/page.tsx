@@ -179,11 +179,11 @@ export default async function MePage() {
             textTransform: 'uppercase',
           }}
         >
-          GC Top 3
+          GC Top 5
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, marginTop: 8 }}>
           {gcPicks.length === 0
-            ? [0, 1, 2].map((i) => (
+            ? [0, 1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
                   style={{
