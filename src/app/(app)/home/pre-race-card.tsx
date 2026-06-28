@@ -101,7 +101,7 @@ export function PreRaceCard({
             letterSpacing: 1,
             textTransform: 'uppercase',
           }}>
-            GC Top 3
+            GC Top 5
           </div>
           {gcPicks.length === 0 ? (
             <div style={{ marginTop: 8 }}>

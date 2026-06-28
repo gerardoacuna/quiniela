@@ -15,6 +15,8 @@ const publishFinalSchema = z.object({
     first: z.string().uuid(),
     second: z.string().uuid(),
     third: z.string().uuid(),
+    fourth: z.string().uuid(),
+    fifth: z.string().uuid(),
   }).optional(),
   jerseyRiderId: z.string().uuid().optional(),
   whiteJerseyRiderId: z.string().uuid().optional(),
@@ -30,16 +32,16 @@ export async function publishFinalCore(
   }
 
   if (input.gc) {
-    const ids = [input.gc.first, input.gc.second, input.gc.third];
-    if (new Set(ids).size !== 3) return { ok: false, error: 'gc_riders_must_be_distinct' };
+    const ids = [input.gc.first, input.gc.second, input.gc.third, input.gc.fourth, input.gc.fifth];
+    if (new Set(ids).size !== 5) return { ok: false, error: 'gc_riders_must_be_distinct' };
 
     await supabase.from('final_classifications').delete()
       .eq('edition_id', input.editionId).eq('kind', 'gc');
-    const { error } = await supabase.from('final_classifications').insert([
-      { edition_id: input.editionId, kind: 'gc', position: 1, rider_id: input.gc.first,  status: 'published' },
-      { edition_id: input.editionId, kind: 'gc', position: 2, rider_id: input.gc.second, status: 'published' },
-      { edition_id: input.editionId, kind: 'gc', position: 3, rider_id: input.gc.third,  status: 'published' },
-    ]);
+    const { error } = await supabase.from('final_classifications').insert(
+      ids.map((rider_id, i) => ({
+        edition_id: input.editionId, kind: 'gc' as const, position: i + 1, rider_id, status: 'published' as const,
+      })),
+    );
     if (error) return { ok: false, error: error.message };
   }
 

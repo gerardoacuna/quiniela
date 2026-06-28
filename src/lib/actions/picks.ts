@@ -147,15 +147,17 @@ const submitGcPicksSchema = z.object({
   first: z.string().uuid(),
   second: z.string().uuid(),
   third: z.string().uuid(),
+  fourth: z.string().uuid(),
+  fifth: z.string().uuid(),
 });
 
 export async function submitGcPicksCore(
   supabase: Supa,
   userId: string,
-  input: { editionId: string; first: string; second: string; third: string },
+  input: { editionId: string; first: string; second: string; third: string; fourth: string; fifth: string },
 ): Promise<ActionResult> {
-  const slots = [input.first, input.second, input.third];
-  if (new Set(slots).size !== 3) return { ok: false, error: 'gc_riders_must_be_distinct' };
+  const slots = [input.first, input.second, input.third, input.fourth, input.fifth];
+  if (new Set(slots).size !== 5) return { ok: false, error: 'gc_riders_must_be_distinct' };
 
   const { data: stage1, error: s1Err } = await supabase
     .from('stages')
@@ -172,17 +174,18 @@ export async function submitGcPicksCore(
     .select('id, edition_id, status')
     .in('id', slots);
   if (rErr) return { ok: false, error: rErr.message };
-  if (!riders || riders.length !== 3) return { ok: false, error: 'rider_not_found' };
+  if (!riders || riders.length !== 5) return { ok: false, error: 'rider_not_found' };
   for (const r of riders) {
     if (r.edition_id !== input.editionId) return { ok: false, error: 'rider_wrong_edition' };
     if (r.status !== 'active') return { ok: false, error: 'rider_not_active' };
   }
 
-  const rows = [
-    { user_id: userId, edition_id: input.editionId, position: 1, rider_id: input.first },
-    { user_id: userId, edition_id: input.editionId, position: 2, rider_id: input.second },
-    { user_id: userId, edition_id: input.editionId, position: 3, rider_id: input.third },
-  ];
+  const rows = slots.map((rider_id, i) => ({
+    user_id: userId,
+    edition_id: input.editionId,
+    position: i + 1,
+    rider_id,
+  }));
   const { error } = await supabase
     .from('gc_picks')
     .upsert(rows, { onConflict: 'user_id,edition_id,position' });
@@ -200,6 +203,8 @@ export async function submitGcPicks(
     first: formData.get('first'),
     second: formData.get('second'),
     third: formData.get('third'),
+    fourth: formData.get('fourth'),
+    fifth: formData.get('fifth'),
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalid_input' };
 

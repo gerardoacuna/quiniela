@@ -9,6 +9,7 @@ const R_POG = '20000000-0000-4000-8000-000000000001';
 const R_AYU = '20000000-0000-4000-8000-000000000002';
 const R_EVE = '20000000-0000-4000-8000-000000000003';
 const R_ROG = '20000000-0000-4000-8000-000000000004';
+const R_GAN = '20000000-0000-4000-8000-000000000005';
 
 const RUN = process.env.SUPABASE_INTEGRATION === '1';
 const d = RUN ? describe : describe.skip;
@@ -26,12 +27,14 @@ d('publishFinalCore (admin)', () => {
       start_time: new Date(Date.now() + 30 * 86400_000).toISOString(),
       status: 'upcoming',
     }).eq('id', STAGE_1);
-    // Player's GC picks exactly match what we'll publish → 90 pts.
+    // Player's GC picks exactly match what we'll publish → 200 pts (50×3 + 25×2).
     await a.from('gc_picks').delete().eq('user_id', player.userId);
     await a.from('gc_picks').insert([
       { user_id: player.userId, edition_id: EDITION, position: 1, rider_id: R_POG },
       { user_id: player.userId, edition_id: EDITION, position: 2, rider_id: R_AYU },
       { user_id: player.userId, edition_id: EDITION, position: 3, rider_id: R_EVE },
+      { user_id: player.userId, edition_id: EDITION, position: 4, rider_id: R_ROG },
+      { user_id: player.userId, edition_id: EDITION, position: 5, rider_id: R_GAN },
     ]);
     // Player's jersey pick → Roglic (matches publish).
     await a.from('jersey_picks').delete().eq('user_id', player.userId);
@@ -55,17 +58,36 @@ d('publishFinalCore (admin)', () => {
     await player.cleanup();
   });
 
-  it('publishing GC matching player picks awards 150 pts', async () => {
+  it('publishing GC top 5 matching player picks awards 200 pts', async () => {
     const c = await userClient(admin.email, admin.password);
     const res = await publishFinalCore(c, admin.userId, {
       editionId: EDITION,
-      gc: { first: R_POG, second: R_AYU, third: R_EVE },
+      gc: { first: R_POG, second: R_AYU, third: R_EVE, fourth: R_ROG, fifth: R_GAN },
     });
     expect(res.ok).toBe(true);
 
     const a = createAdminClient();
     const { data } = await a.from('leaderboard_view').select('*').eq('user_id', player.userId);
-    expect(data?.[0]?.gc_points).toBe(150);
+    expect(data?.[0]?.gc_points).toBe(200);
+  });
+
+  it('a correct 4th-place pick alone awards 25 pts', async () => {
+    const a = createAdminClient();
+    await a.from('gc_picks').delete().eq('user_id', player.userId);
+    await a.from('gc_picks').insert([
+      { user_id: player.userId, edition_id: EDITION, position: 4, rider_id: R_ROG },
+    ]);
+    await a.from('final_classifications').delete().eq('edition_id', EDITION);
+
+    const c = await userClient(admin.email, admin.password);
+    const res = await publishFinalCore(c, admin.userId, {
+      editionId: EDITION,
+      gc: { first: R_POG, second: R_AYU, third: R_EVE, fourth: R_ROG, fifth: R_GAN },
+    });
+    expect(res.ok).toBe(true);
+
+    const { data } = await a.from('leaderboard_view').select('*').eq('user_id', player.userId);
+    expect(data?.[0]?.gc_points).toBe(25);
   });
 
   it('publishing jersey matching player pick awards 30 pts', async () => {
@@ -85,7 +107,7 @@ d('publishFinalCore (admin)', () => {
     const c = await userClient(admin.email, admin.password);
     const res = await publishFinalCore(c, admin.userId, {
       editionId: EDITION,
-      gc: { first: R_POG, second: R_POG, third: R_EVE },
+      gc: { first: R_POG, second: R_POG, third: R_EVE, fourth: R_ROG, fifth: R_GAN },
     });
     expect(res.ok).toBe(false);
   });

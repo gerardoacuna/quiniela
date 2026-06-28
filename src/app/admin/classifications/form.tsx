@@ -29,7 +29,7 @@ export function FinalForm({
   editionId, initialGc, initialJersey, initialWhiteJersey, riders,
 }: {
   editionId: string;
-  initialGc: { first: string; second: string; third: string };
+  initialGc: { first: string; second: string; third: string; fourth: string; fifth: string };
   initialJersey: string;
   initialWhiteJersey: string;
   riders: RiderOpt[];
@@ -40,17 +40,18 @@ export function FinalForm({
   const [status, setStatus] = useState<null | 'saving' | 'saved' | string>(null);
   const [pending, startTransition] = useTransition();
 
-  const gcValid = gc.first && gc.second && gc.third && new Set([gc.first, gc.second, gc.third]).size === 3;
+  const gcSlots = [gc.first, gc.second, gc.third, gc.fourth, gc.fifth];
+  const gcValid = gcSlots.every(Boolean) && new Set(gcSlots).size === 5;
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Final classifications</h1>
       <p className="text-sm text-muted-foreground">
-        Set and publish GC top-3, points jersey winner, and white jersey winner. Each block is optional; publish what you have.
+        Set and publish GC top-5, points jersey winner, and white jersey winner. Each block is optional; publish what you have.
       </p>
 
       <section className="space-y-2">
-        <h2 className="font-semibold">GC top 3</h2>
+        <h2 className="font-semibold">GC top 5</h2>
         <label className="block text-sm">1st place
           <RiderSelect id="first" value={gc.first} onChange={(v) => setGc({ ...gc, first: v })} riders={riders} />
         </label>
@@ -60,8 +61,14 @@ export function FinalForm({
         <label className="block text-sm">3rd place
           <RiderSelect id="third" value={gc.third} onChange={(v) => setGc({ ...gc, third: v })} riders={riders} />
         </label>
-        {!gcValid && (gc.first || gc.second || gc.third) && (
-          <p className="text-xs text-red-600">All three slots need distinct riders to publish GC.</p>
+        <label className="block text-sm">4th place
+          <RiderSelect id="fourth" value={gc.fourth} onChange={(v) => setGc({ ...gc, fourth: v })} riders={riders} />
+        </label>
+        <label className="block text-sm">5th place
+          <RiderSelect id="fifth" value={gc.fifth} onChange={(v) => setGc({ ...gc, fifth: v })} riders={riders} />
+        </label>
+        {!gcValid && gcSlots.some(Boolean) && (
+          <p className="text-xs text-red-600">All five slots need distinct riders to publish GC.</p>
         )}
       </section>
 
