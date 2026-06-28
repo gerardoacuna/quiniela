@@ -25,6 +25,8 @@ export default async function AdminFinalPage() {
         first:  gcByPos.get(1) ?? '',
         second: gcByPos.get(2) ?? '',
         third:  gcByPos.get(3) ?? '',
+        fourth: gcByPos.get(4) ?? '',
+        fifth:  gcByPos.get(5) ?? '',
       }}
       initialJersey={jersey?.rider_id ?? ''}
       initialWhiteJersey={whiteJersey?.rider_id ?? ''}
