@@ -1,12 +1,22 @@
 -- Sync prod riders to PCS startlist (parsed 184 entries).
 -- Generated 2026-05-05.
 
-begin;
+-- Guarded: this is a production data sync tied to the prod edition. A fresh
+-- `supabase db reset` seeds a different edition, so without this guard the INSERT
+-- below fails the riders→editions FK. Skipping when the edition is absent makes the
+-- migration a no-op locally/in CI while running identically in prod (where it already ran).
+do $$
+begin
+  if not exists (
+    select 1 from public.editions where id = '1f81b661-42fa-43db-8af3-5c9a2ac4f107'
+  ) then
+    return;
+  end if;
 
--- Upsert the 184 startlist riders. Existing rows keyed by (edition_id, pcs_slug)
--- are updated in place, preserving id + is_top_tier + picks. Status forced to 'active'
--- so anyone previously marked dnf/dns who's back in the startlist is re-enabled.
-insert into public.riders (edition_id, pcs_slug, name, team, bib, status, is_top_tier) values
+  -- Upsert the 184 startlist riders. Existing rows keyed by (edition_id, pcs_slug)
+  -- are updated in place, preserving id + is_top_tier + picks. Status forced to 'active'
+  -- so anyone previously marked dnf/dns who's back in the startlist is re-enabled.
+  insert into public.riders (edition_id, pcs_slug, name, team, bib, status, is_top_tier) values
   ('1f81b661-42fa-43db-8af3-5c9a2ac4f107', 'kaden-groves', 'Kaden Groves', 'Alpecin - Premier Tech', 1, 'active', false),
   ('1f81b661-42fa-43db-8af3-5c9a2ac4f107', 'tobias-bayer', 'Tobias Bayer', 'Alpecin - Premier Tech', 2, 'active', false),
   ('1f81b661-42fa-43db-8af3-5c9a2ac4f107', 'francesco-busatto', 'Francesco Busatto', 'Alpecin - Premier Tech', 3, 'active', false),
@@ -204,4 +214,4 @@ update public.riders
   where edition_id = '1f81b661-42fa-43db-8af3-5c9a2ac4f107'
     and pcs_slug not in ('kaden-groves', 'tobias-bayer', 'francesco-busatto', 'jonas-geens', 'edward-planckaert', 'jensen-plowright', 'johan-price-pejtersen', 'luca-vergallito', 'santiago-buitrago-sanchez', 'damiano-caruso', 'robert-stannard', 'fran-miholjevic', 'afonso-eulalio', 'mathijs-paasschens', 'alec-segaert', 'edoardo-zambanini', 'filippo-magli2', 'martin-marcellusi', 'luca-paletti', 'vicente-rojas', 'manuele-tarozzi', 'nikita-tsvetkov', 'filippo-turconi', 'enrico-zanoncello', 'felix-gall', 'tobias-lund-andresen', 'tord-gudmestad', 'gregor-muhlberger', 'oliver-naesen', 'rasmus-sojbergpedersen', 'callum-scotson', 'johannes-staune-mittet', 'vincenzo-albanese', 'samuele-battistella', 'markel-beloki', 'madis-mihkels', 'darren-rafferty', 'james-shaw', 'michael-valgren-andersen', 'jardi-christiaan-van-der-lee', 'remi-cavagna', 'cyril-barthe', 'axel-huens', 'johan-jacobs', 'josh-kench', 'paul-penhoet', 'remy-rochas', 'brieuc-rolland', 'giulio-ciccone', 'simone-consonni', 'derek-gee', 'amanuel-ghebreigzabhier', 'jonathan-milan', 'matteo-sobrero', 'tim-torn-teutenberg', 'max-walscheid', 'arnaud-de-lie', 'toon-aerts', 'simone-gualdi', 'milan-menten', 'lorenzo-rota', 'jonas-rutsch', 'liam-slock', 'lennert-van-eetvelt', 'enric-mas', 'orluis-aular', 'ivan-garcia-cortina', 'juan-pedro-lopez', 'lorenzo-milesi', 'nelson-oliveira', 'javier-romo', 'einer-rubio', 'egan-bernal', 'thymen-arensman', 'filippo-ganna', 'jack-haig', 'magnus-sheffield', 'embret-svestad-bardseng', 'connor-swift', 'ben-turner', 'alessandro-pinarello', 'jan-hirt', 'ryan-mullen', 'nick-schultz', 'dion-smith', 'jake-stewart', 'corbin-strong', 'ethan-vernon', 'sjoerd-bax', 'fabio-christen', 'david-de-la-cruz', 'mark-donovan', 'david-gonzalez-lopez', 'chris-harper', 'matteo-moschetti', 'nickolas-zukowsky', 'jai-hindley', 'giovanni-aleotti', 'nico-denz', 'gianni-moscon', 'giulio-pellizzari', 'mick-van-dijke', 'aleksandr-vlasov', 'ben-zwiehoff', 'paul-magnier', 'ayco-bastiaens', 'gianmarco-garofoli', 'andrea-raccagni-noviero', 'jasper-stuyven', 'fabio-van-den-bossche', 'dries-van-gestel', 'filippo-zana', 'ben-o-connor', 'pascal-ackermann', 'koen-bouwman', 'robert-donaldson', 'felix-engelhardt', 'alan-hatherly', 'christopher-juul-jensen', 'andrea-vendrame', 'warren-barguil', 'timo-de-jong', 'sean-flynn', 'chris-hamilton', 'gijs-leemreize', 'tim-naberman', 'frank-van-den-broek', 'casper-van-uden', 'mattia-bais', 'ludovico-crescioli', 'giovanni-lonardi', 'mirco-maestri', 'andrea-mifsud', 'thomas-pesenti', 'diego-pablo-sevilla', 'alessandro-tonelli', 'jonas-vingegaard', 'victor-campenaerts', 'wilco-kelderman', 'timo-kielich', 'sepp-kuss', 'bart-lemmen', 'davide-piganzoli', 'tim-rex', 'michael-storer', 'william-barta', 'robin-froidevaux', 'fabian-lienhard', 'luca-mozzato', 'mathys-rondel', 'florian-stork', 'lawrence-warbasse', 'adam-yates', 'igor-arrieta-lizarraga', 'mikkel-bjerg', 'jan-christen', 'jhonatan-narvaez', 'marc-soler', 'antonio-morgado', 'jay-vine', 'dylan-groenewegen', 'hartthijs-de-vries', 'matyas-kopecky', 'tomas-kopecky', 'lukas-kubis', 'niklas-larsen', 'wout-poels', 'elmar-reinders', 'markus-hoelgaard', 'adne-holter', 'johannes-kulset', 'fredrik-dversnes', 'andreas-leknessund', 'erlend-blikra', 'sakarias-koller-loland', 'martin-tjotta', 'davide-ballerini', 'alberto-bettiol', 'arjen-livyns', 'harold-martin-lopez', 'matteo-malucelli', 'christian-scaroni', 'guillermo-thomas-silva-coussan', 'diego-ulissi');
 
-commit;
+end $$;

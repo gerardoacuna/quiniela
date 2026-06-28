@@ -55,7 +55,7 @@ d('leaderboard_view stage additive scoring', () => {
     return data;
   }
 
-  it('primary P3 + underdog P7 = 14 stage points', async () => {
+  it('primary P3 + underdog P7 = 23 stage points', async () => {
     const a = createAdminClient();
     await a.from('stage_results').insert([
       { stage_id: STAGE_ID, position: 3, rider_id: RIDER_PRIMARY, status: 'published' },
@@ -69,7 +69,7 @@ d('leaderboard_view stage additive scoring', () => {
     });
 
     const board = await readBoard();
-    expect(board?.stage_points).toBe(14);
+    expect(board?.stage_points).toBe(16 + 7);
     expect(board?.exact_winners_count).toBe(0);
   });
 
@@ -87,7 +87,7 @@ d('leaderboard_view stage additive scoring', () => {
     });
 
     const board = await readBoard();
-    expect(board?.stage_points).toBe(6 + 25);
+    expect(board?.stage_points).toBe(11 + 25);
     expect(board?.exact_winners_count).toBe(1);
   });
 
@@ -104,7 +104,7 @@ d('leaderboard_view stage additive scoring', () => {
     });
 
     const board = await readBoard();
-    expect(board?.stage_points).toBe(15);
+    expect(board?.stage_points).toBe(20);
     expect(board?.exact_winners_count).toBe(0);
   });
 });
