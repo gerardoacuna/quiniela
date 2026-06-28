@@ -62,4 +62,52 @@ describe('gcPoints', () => {
       { position: 1, rider_id: 'pogacar' },
     ], [])).toBe(0);
   });
+
+  const actual5 = [
+    { position: 1, rider_id: 'pogacar' },
+    { position: 2, rider_id: 'ayuso' },
+    { position: 3, rider_id: 'evenepoel' },
+    { position: 4, rider_id: 'roglic' },
+    { position: 5, rider_id: 'ganna' },
+  ];
+
+  it('awards 25 for an exact 4th-place pick', () => {
+    const picks = [{ position: 4, rider_id: 'roglic' }];
+    expect(gcPoints(picks, actual5)).toBe(25);
+  });
+
+  it('awards 25 for an exact 5th-place pick', () => {
+    const picks = [{ position: 5, rider_id: 'ganna' }];
+    expect(gcPoints(picks, actual5)).toBe(25);
+  });
+
+  it('gives 0 for a 4th-place pick whose rider finished 5th (no partial credit on 4/5)', () => {
+    const picks = [{ position: 4, rider_id: 'ganna' }];
+    expect(gcPoints(picks, actual5)).toBe(0);
+  });
+
+  it('gives 0 when a top-3 pick finishes 4th or 5th (podium stays top-3)', () => {
+    const picks = [{ position: 1, rider_id: 'roglic' }]; // roglic finished 4th
+    expect(gcPoints(picks, actual5)).toBe(0);
+  });
+
+  it('top-3 partial credit is unchanged when 4th/5th finishers exist', () => {
+    const picks = [
+      { position: 1, rider_id: 'evenepoel' }, // in top 3, wrong slot → 25
+      { position: 2, rider_id: 'pogacar' },   // in top 3, wrong slot → 25
+      { position: 3, rider_id: 'ayuso' },     // in top 3, wrong slot → 25
+    ];
+    expect(gcPoints(picks, actual5)).toBe(75);
+  });
+
+  it('scores a full top-5 slate', () => {
+    const picks = [
+      { position: 1, rider_id: 'pogacar' },   // 50
+      { position: 2, rider_id: 'ayuso' },     // 50
+      { position: 3, rider_id: 'evenepoel' }, // 50
+      { position: 4, rider_id: 'roglic' },    // 25
+      { position: 5, rider_id: 'ganna' },     // 25
+    ];
+    expect(gcPoints(picks, actual5)).toBe(200);
+  });
 });
