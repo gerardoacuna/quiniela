@@ -23,8 +23,9 @@ type Rider = {
 
 type InitialPick = { position: number; rider: Rider };
 
-const SLOT_LABELS = ['1st', '2nd', '3rd'] as const;
-const SLOT_ORDINALS = ['first', 'second', 'third'] as const;
+const SLOT_LABELS = ['1st', '2nd', '3rd', '4th', '5th'] as const;
+const SLOT_ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth'] as const;
+type Slot5 = [string | null, string | null, string | null, string | null, string | null];
 
 export function GcPickForm({
   editionId,
@@ -37,16 +38,16 @@ export function GcPickForm({
   initialPicks: InitialPick[];
   isLocked: boolean;
 }) {
-  // picks[0] = 1st, picks[1] = 2nd, picks[2] = 3rd
-  const initPickIds: [string | null, string | null, string | null] = [null, null, null];
+  // picks[0] = 1st … picks[4] = 5th
+  const initPickIds: Slot5 = [null, null, null, null, null];
   for (const p of initialPicks) {
-    if (p.position >= 1 && p.position <= 3) {
+    if (p.position >= 1 && p.position <= 5) {
       initPickIds[p.position - 1] = p.rider.id;
     }
   }
 
-  const [picks, setPicks] = useState<[string | null, string | null, string | null]>(initPickIds);
-  const [editingPos, setEditingPos] = useState<1 | 2 | 3 | null>(null);
+  const [picks, setPicks] = useState<Slot5>(initPickIds);
+  const [editingPos, setEditingPos] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
   const [query, setQuery] = useState('');
   const [state, formAction, pending] = useActionState(submitGcPicks, null as ActionResult | null);
 
@@ -55,13 +56,12 @@ export function GcPickForm({
   // Saved state for dirty check
   const savedPicks = initPickIds;
 
-  const allFilled = picks[0] !== null && picks[1] !== null && picks[2] !== null;
-  const allDistinct = allFilled && new Set(picks).size === 3;
-  const unchanged =
-    picks[0] === savedPicks[0] && picks[1] === savedPicks[1] && picks[2] === savedPicks[2];
+  const allFilled = picks.every((p) => p !== null);
+  const allDistinct = allFilled && new Set(picks).size === 5;
+  const unchanged = picks.every((p, i) => p === savedPicks[i]);
   const saveDisabled = isLocked || !allDistinct || unchanged || pending;
 
-  function handleSlotClick(pos: 1 | 2 | 3) {
+  function handleSlotClick(pos: 1 | 2 | 3 | 4 | 5) {
     if (isLocked) return;
     setEditingPos((prev) => (prev === pos ? null : pos));
     setQuery('');
@@ -71,11 +71,7 @@ export function GcPickForm({
     if (editingPos === null) return;
     const idx = editingPos - 1;
     setPicks((prev) => {
-      const next: [string | null, string | null, string | null] = [...prev] as [
-        string | null,
-        string | null,
-        string | null,
-      ];
+      const next = [...prev] as Slot5;
       next[idx] = riderId;
       return next;
     });
@@ -115,8 +111,8 @@ export function GcPickForm({
 
       <PageHeading
         eyebrow="Pre-race"
-        title="GC Top 3"
-        sub="50 pts exact position · 25 pts wrong-position podium · scored after final GC."
+        title="GC Top 5"
+        sub="1st–3rd: 50 pts exact · 25 pts wrong-slot podium. 4th–5th: 25 pts exact only."
       />
 
       {/* Locked notice */}
@@ -131,9 +127,9 @@ export function GcPickForm({
         </Card>
       )}
 
-      {/* Three slot tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-        {([1, 2, 3] as const).map((pos) => {
+      {/* Five slot tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+        {([1, 2, 3, 4, 5] as const).map((pos) => {
           const idx = pos - 1;
           const riderId = picks[idx];
           const rider = riderId ? riderMap.get(riderId) : null;
@@ -223,11 +219,11 @@ export function GcPickForm({
           lineHeight: 1.5,
         }}
       >
-        <strong style={{ color: 'var(--ink)', fontSize: 13 }}>Scoring max 150 pts.</strong>
+        <strong style={{ color: 'var(--ink)', fontSize: 13 }}>Scoring max 200 pts.</strong>
         <br />
-        · 50 pts if your pick finishes at that exact position
+        · 1st–3rd: 50 pts at the exact position, 25 pts if your pick lands in the actual top 3 at a different slot
         <br />
-        · 25 pts if your pick finishes in the actual top 3 at a different position
+        · 4th &amp; 5th: 25 pts only if your pick finishes at that exact position
         <br />
         · 0 pts otherwise
       </div>
@@ -239,6 +235,8 @@ export function GcPickForm({
           <input type="hidden" name={SLOT_ORDINALS[0]} value={picks[0] ?? ''} />
           <input type="hidden" name={SLOT_ORDINALS[1]} value={picks[1] ?? ''} />
           <input type="hidden" name={SLOT_ORDINALS[2]} value={picks[2] ?? ''} />
+          <input type="hidden" name={SLOT_ORDINALS[3]} value={picks[3] ?? ''} />
+          <input type="hidden" name={SLOT_ORDINALS[4]} value={picks[4] ?? ''} />
           <DsButton variant="accent" size="lg" full type="submit" disabled={saveDisabled}>
             {pending ? 'Saving…' : 'Save GC picks'}
           </DsButton>
