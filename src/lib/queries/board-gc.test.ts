@@ -13,7 +13,7 @@ const POG = { id: 'r-pog', name: 'Pogačar',  team: 'UAE',     bib: 1 };
 const VIN = { id: 'r-vin', name: 'Vingegaard', team: 'Visma', bib: 11 };
 const ROG = { id: 'r-rog', name: 'Roglič',   team: 'RBH',    bib: 21 };
 
-function pick(userId: string, displayName: string, position: 1 | 2 | 3, rider: typeof POG): GcRawRow {
+function pick(userId: string, displayName: string, position: 1 | 2 | 3 | 4 | 5, rider: typeof POG): GcRawRow {
   return {
     user_id: userId,
     position,
@@ -43,7 +43,7 @@ describe('buildGcByPlayer', () => {
     const out = buildGcByPlayer(rows, [ALICE, BOB]);
     expect(out).toHaveLength(2);
     expect(out[1].userId).toBe(BOB);
-    expect(out[1].picks).toEqual({ p1: null, p2: null, p3: null });
+    expect(out[1].picks).toEqual({ p1: null, p2: null, p3: null, p4: null, p5: null });
   });
 
   it('handles partial slates (only p1 set)', () => {
@@ -62,6 +62,18 @@ describe('buildGcByPlayer', () => {
 
   it('returns empty when both rows and playerOrder are empty', () => {
     expect(buildGcByPlayer([], [])).toEqual([]);
+  });
+
+  it('fills 4th and 5th slots', () => {
+    const rows: GcRawRow[] = [
+      pick(ALICE, 'Alice', 1, POG),
+      pick(ALICE, 'Alice', 4, VIN),
+      pick(ALICE, 'Alice', 5, ROG),
+    ];
+    const out = buildGcByPlayer(rows, [ALICE]);
+    expect(out[0].picks.p4?.id).toBe('r-vin');
+    expect(out[0].picks.p5?.id).toBe('r-rog');
+    expect(out[0].picks.p2).toBeNull();
   });
 });
 
@@ -106,6 +118,17 @@ describe('buildGcByRider', () => {
 
   it('handles empty input', () => {
     expect(buildGcByRider([], ALICE)).toEqual([]);
+  });
+
+  it('aggregates 4th/5th pickers', () => {
+    const rows: GcRawRow[] = [
+      pick(ALICE, 'Alice', 4, POG),
+      pick(BOB,   'Bob',   5, POG),
+    ];
+    const out = buildGcByRider(rows, ALICE);
+    const pog = out.find((r) => r.rider.id === 'r-pog')!;
+    expect(pog.p4Names).toEqual(['You']);
+    expect(pog.p5Names).toEqual(['Bob']);
   });
 
   it("renders names alphabetically when current user is not among pickers", () => {
