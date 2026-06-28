@@ -2,7 +2,7 @@ export interface JerseyPick {
   rider_id: string;
 }
 
-export const JERSEY_POINTS = 50;
+export const JERSEY_POINTS = 25;
 
 export function jerseyPoints(pick: JerseyPick | null, actualWinnerRiderId: string | null): number {
   if (!pick || !actualWinnerRiderId) return 0;
