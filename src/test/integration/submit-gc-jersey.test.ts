@@ -9,6 +9,8 @@ const STAGE_21 = '10000000-0000-4000-8000-000000000003';
 const RIDER_POG = '20000000-0000-4000-8000-000000000001';
 const RIDER_AYU = '20000000-0000-4000-8000-000000000002';
 const RIDER_EVE = '20000000-0000-4000-8000-000000000003';
+const RIDER_ROG = '20000000-0000-4000-8000-000000000004';
+const RIDER_GAN = '20000000-0000-4000-8000-000000000005';
 
 const RUN = process.env.SUPABASE_INTEGRATION === '1';
 const d = RUN ? describe : describe.skip;
@@ -32,13 +34,15 @@ d('submitGcPicksCore', () => {
     });
   });
 
-  it('saves 3 distinct picks', async () => {
+  it('saves 5 distinct picks', async () => {
     const c = await userClient(user.email, user.password);
     const res = await submitGcPicksCore(c, user.userId, {
       editionId: EDITION,
       first: RIDER_POG,
       second: RIDER_AYU,
       third: RIDER_EVE,
+      fourth: RIDER_ROG,
+      fifth: RIDER_GAN,
     });
     expect(res.ok).toBe(true);
   });
@@ -50,6 +54,8 @@ d('submitGcPicksCore', () => {
       first: RIDER_POG,
       second: RIDER_POG,
       third: RIDER_EVE,
+      fourth: RIDER_ROG,
+      fifth: RIDER_GAN,
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe('gc_riders_must_be_distinct');
