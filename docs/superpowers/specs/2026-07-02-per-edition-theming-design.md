@@ -108,7 +108,7 @@ Usage rules baked into components/tokens:
   value. No structural/component-API changes.
 - Dynamic branding: replace the three hardcoded `"GIRO · MMXXVI"` strings with a
   computed label `"<RACE> · <ROMAN-YEAR>"`. `<RACE>` comes from a small map keyed
-  by the theme key (`giro` → `"GIRO"`, `tour` → `"TOUR"`); `<ROMAN-YEAR>` is the
+  by the theme key (`giro` → `"GIRO"`, `tour` → `"TDF"`); `<ROMAN-YEAR>` is the
   year of `edition.start_date` in roman numerals (2026 → `MMXXVI`). Expose this
   as a helper (e.g. `editionLabel(edition)`) and thread it to `sign-in`,
   `onboarding`, and `app-shell`. Fallback when no edition: `"GIRO · MMXXVI"`.
