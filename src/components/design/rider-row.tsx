@@ -36,7 +36,7 @@ export function RiderRow({
         textAlign: 'left',
         padding: dense ? '10px 12px' : '14px 14px',
         background: selected ? 'var(--accent-soft)' : 'transparent',
-        border: `1px solid ${selected ? 'var(--accent)' : 'transparent'}`,
+        border: `1px solid ${selected ? 'var(--accent-border)' : 'transparent'}`,
         borderBottom: '1px solid var(--hair)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.45 : 1,

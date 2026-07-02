@@ -90,7 +90,7 @@ export function StageRow({
         gap: 12,
         alignItems: 'center',
         background: 'var(--surface)',
-        border: `1px solid ${isNext ? 'var(--accent)' : 'var(--hair)'}`,
+        border: `1px solid ${isNext ? 'var(--accent-border)' : 'var(--hair)'}`,
         borderRadius: 'var(--radius)',
         padding: '12px 14px',
         textDecoration: 'none',

@@ -4,6 +4,8 @@ import { getHomeData } from '@/lib/queries/home';
 import { createClient } from '@/lib/supabase/server';
 import { stagePoints, stageRowPoints } from '@/lib/scoring';
 import { HeroNextStage } from './hero-next-stage';
+import { HeroPreRace } from './hero-pre-race';
+import { isPreRaceOpen } from './pre-race-open';
 import { StageTimeline } from '@/components/stage-timeline';
 import { StandingCard } from './standing-card';
 import { RecentPicksCard } from './recent-picks-card';
@@ -143,9 +145,22 @@ export default async function HomePage() {
     white:  whiteRow  ? { rider: whiteRow.riders }  : null,
   };
 
+  const stage1 = data.stages.find((s) => s.number === 1) ?? null;
+  const preRaceOpen = isPreRaceOpen(stage1?.start_time, now);
+  const gcDone = gcPicks.length === 5;
+  const pointsDone = jerseyPicks.points != null;
+  const youthDone = jerseyPicks.white != null;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: '0 16px' }}>
-      {nextStage ? (
+      {preRaceOpen && stage1 ? (
+        <HeroPreRace
+          stage1StartIso={stage1.start_time}
+          gcDone={gcDone}
+          pointsDone={pointsDone}
+          youthDone={youthDone}
+        />
+      ) : nextStage ? (
         <HeroNextStage
           stage={nextStage}
           pick={{

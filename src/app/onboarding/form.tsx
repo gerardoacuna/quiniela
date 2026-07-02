@@ -77,7 +77,7 @@ export default function OnboardingForm() {
           onBlur={() => setNameFocused(false)}
           style={{
             background: 'var(--surface-alt)',
-            border: `1px solid ${nameFocused ? 'var(--accent)' : 'var(--hair)'}`,
+            border: `1px solid ${nameFocused ? 'var(--accent-border)' : 'var(--hair)'}`,
             color: 'var(--ink)',
             borderRadius: 'var(--radius)',
             padding: '10px 12px',
