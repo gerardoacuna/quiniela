@@ -6,7 +6,7 @@ type Size = 'xs' | 'sm' | 'md';
 const TONES: Record<Tone, { bg: string; fg: string; bd: string }> = {
   default: { bg: 'var(--surface-alt)', fg: 'var(--ink)',        bd: 'var(--hair)' },
   accent:  { bg: 'var(--accent)',      fg: 'var(--accent-ink)', bd: 'var(--accent)' },
-  soft:    { bg: 'var(--accent-soft)', fg: 'var(--accent)',     bd: 'var(--accent-soft)' },
+  soft:    { bg: 'var(--accent-soft)', fg: 'var(--accent-text)', bd: 'var(--accent-soft)' },
   muted:   { bg: 'transparent',        fg: 'var(--ink-mute)',   bd: 'var(--hair)' },
   ok:      { bg: 'transparent',        fg: 'var(--ok)',         bd: 'var(--ok)' },
   warn:    { bg: 'transparent',        fg: 'var(--warn)',       bd: 'var(--warn)' },

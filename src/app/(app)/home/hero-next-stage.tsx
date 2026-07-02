@@ -219,7 +219,7 @@ function HeroPickRow({ kind, rider }: { kind: 'primary' | 'underdog'; rider: Her
 
   const headline = kind === 'primary' ? 'No rider yet' : 'No underdog yet';
   const sub = kind === 'primary' ? "You're missing points." : 'Optional hedge for the same stage.';
-  const headlineColor = kind === 'primary' ? 'var(--accent)' : 'var(--ink)';
+  const headlineColor = kind === 'primary' ? 'var(--accent-text)' : 'var(--ink)';
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

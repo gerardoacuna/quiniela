@@ -84,7 +84,7 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
                     padding: '10px 12px', borderRadius: 'var(--radius)',
                     fontSize: 14, fontWeight: 600, textDecoration: 'none',
                   }}>
-                    <NavIcon name={t.icon} color={active ? 'var(--accent)' : 'var(--ink-soft)'} size={18} />
+                    <NavIcon name={t.icon} color={active ? 'var(--accent-text)' : 'var(--ink-soft)'} size={18} />
                     {t.label}
                   </Link>
                 );
@@ -112,7 +112,7 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
                 padding: '8px 0', color: active ? 'var(--accent-text)' : 'var(--ink-soft)',
                 textDecoration: 'none',
               }}>
-                <NavIcon name={t.icon} color={active ? 'var(--accent)' : 'var(--ink-soft)'} />
+                <NavIcon name={t.icon} color={active ? 'var(--accent-text)' : 'var(--ink-soft)'} />
                 <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase' }}>{t.label}</span>
               </Link>
             );
