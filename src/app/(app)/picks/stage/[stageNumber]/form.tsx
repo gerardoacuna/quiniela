@@ -296,7 +296,7 @@ export function StagePickForm({
             {pending ? 'Saving…' : !dirty ? 'Picks saved ✓' : 'Save picks'}
           </button>
           {state && !state.ok && (
-            <p style={{ fontSize: 13, color: 'var(--accent)', marginTop: 8 }}>{state.error}</p>
+            <p style={{ fontSize: 13, color: 'var(--accent-text)', marginTop: 8 }}>{state.error}</p>
           )}
         </form>
       </StickyActionBar>

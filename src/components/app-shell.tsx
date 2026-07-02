@@ -80,7 +80,7 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
                   <Link key={t.href} href={t.href} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     background: active ? 'var(--accent-soft)' : 'transparent',
-                    color: active ? 'var(--accent)' : 'var(--ink)',
+                    color: active ? 'var(--accent-text)' : 'var(--ink)',
                     padding: '10px 12px', borderRadius: 'var(--radius)',
                     fontSize: 14, fontWeight: 600, textDecoration: 'none',
                   }}>
@@ -109,7 +109,7 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
             return (
               <Link key={t.href} href={t.href} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '8px 0', color: active ? 'var(--accent)' : 'var(--ink-soft)',
+                padding: '8px 0', color: active ? 'var(--accent-text)' : 'var(--ink-soft)',
                 textDecoration: 'none',
               }}>
                 <NavIcon name={t.icon} color={active ? 'var(--accent)' : 'var(--ink-soft)'} />

@@ -56,7 +56,7 @@ export function PreRaceStrip({
                     fontSize: 9,
                     fontFamily: 'var(--font-mono)',
                     letterSpacing: 1,
-                    color: 'var(--accent)',
+                    color: 'var(--accent-text)',
                     fontWeight: 700,
                   }}
                 >

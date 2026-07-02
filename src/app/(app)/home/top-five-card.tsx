@@ -81,7 +81,7 @@ export function TopFiveCard({
         <Link href="/board" style={{
           background: 'none',
           border: 'none',
-          color: 'var(--accent)',
+          color: 'var(--accent-text)',
           fontSize: 12,
           fontWeight: 600,
           cursor: 'pointer',

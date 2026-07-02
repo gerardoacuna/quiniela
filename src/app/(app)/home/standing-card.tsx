@@ -91,7 +91,7 @@ export function StandingCard({
         <span style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 13,
-          color: 'var(--accent)',
+          color: 'var(--accent-text)',
           fontWeight: 700,
           padding: '4px 8px',
           background: 'var(--row-you-bg)',

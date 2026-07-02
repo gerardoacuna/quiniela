@@ -65,7 +65,7 @@ export function StageRow({
           fontFamily: 'var(--font-mono)',
           fontSize: 14,
           fontWeight: 700,
-          color: totalPts > 0 ? 'var(--accent)' : 'var(--ink-mute)',
+          color: totalPts > 0 ? 'var(--accent-text)' : 'var(--ink-mute)',
         }}
       >
         +{totalPts}
@@ -104,7 +104,7 @@ export function StageRow({
             fontWeight: 600,
             fontSize: 30,
             lineHeight: 1,
-            color: isNext ? 'var(--accent)' : 'var(--ink)',
+            color: isNext ? 'var(--accent-text)' : 'var(--ink)',
           }}
         >
           {number}

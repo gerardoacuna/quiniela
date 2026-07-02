@@ -72,7 +72,7 @@ export function WhoPickedWhomCard({ grouped, scored, resultsMap, doublePoints }:
                     fontFamily: 'var(--font-mono)',
                     fontSize: 12,
                     fontWeight: 700,
-                    color: pos != null ? 'var(--accent)' : 'var(--ink-mute)',
+                    color: pos != null ? 'var(--accent-text)' : 'var(--ink-mute)',
                   }}
                 >
                   {pos != null ? `${ordinal(pos)} · +${pts}` : 'out of top 10'}

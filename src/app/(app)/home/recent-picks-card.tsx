@@ -35,7 +35,7 @@ export function RecentPicksCard({ recent }: { recent: RecentPick[] }) {
         <Link href="/me" style={{
           background: 'none',
           border: 'none',
-          color: 'var(--accent)',
+          color: 'var(--accent-text)',
           fontSize: 11,
           fontWeight: 600,
           cursor: 'pointer',
@@ -88,7 +88,7 @@ export function RecentPicksCard({ recent }: { recent: RecentPick[] }) {
                 fontFamily: 'var(--font-mono)',
                 fontSize: 9,
                 letterSpacing: 1,
-                color: r.kind === 'underdog' ? 'var(--accent)' : 'var(--ink-mute)',
+                color: r.kind === 'underdog' ? 'var(--accent-text)' : 'var(--ink-mute)',
                 width: 14,
                 flexShrink: 0,
                 fontWeight: 700,
@@ -119,7 +119,7 @@ export function RecentPicksCard({ recent }: { recent: RecentPick[] }) {
                 fontFamily: 'var(--font-mono)',
                 fontSize: 13,
                 fontWeight: 600,
-                color: hit ? 'var(--accent)' : 'var(--ink-mute)',
+                color: hit ? 'var(--accent-text)' : 'var(--ink-mute)',
                 width: 40,
                 textAlign: 'right',
               }}>

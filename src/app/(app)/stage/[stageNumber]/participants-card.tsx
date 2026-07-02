@@ -157,7 +157,7 @@ function PointsCell({
         fontFamily: 'var(--font-mono)',
         fontSize: 12,
         fontWeight: value > 0 ? 700 : 500,
-        color: value > 0 ? 'var(--accent)' : 'var(--ink-mute)',
+        color: value > 0 ? 'var(--accent-text)' : 'var(--ink-mute)',
         textAlign: 'right',
       }}
     >

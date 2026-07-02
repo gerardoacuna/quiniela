@@ -90,7 +90,7 @@ export function HeroNextStage({
             letterSpacing: -0.6,
             color: 'var(--ink)',
           }}>
-            Stage <span style={{ color: 'var(--accent)' }}>{stage.number}</span>
+            Stage <span style={{ color: 'var(--accent-text)' }}>{stage.number}</span>
           </h1>
           <div style={{ fontSize: 15, color: 'var(--ink-soft)', marginTop: 6, fontWeight: 500 }}>
             {stage.km}km · {TERRAIN_LABEL[stage.terrain]}
@@ -230,7 +230,7 @@ function HeroPickRow({ kind, rider }: { kind: 'primary' | 'underdog'; rider: Her
         borderRadius: 2,
         display: 'grid',
         placeItems: 'center',
-        color: 'var(--accent)',
+        color: 'var(--accent-text)',
       }}>
         ?
       </div>
