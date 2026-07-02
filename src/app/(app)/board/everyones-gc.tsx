@@ -154,7 +154,8 @@ function PlayerGroupedCard({
               gap: 10,
               padding: '10px 14px',
               borderBottom: '1px solid var(--hair)',
-              background: isMe ? 'var(--accent-soft)' : 'transparent',
+              background: isMe ? 'var(--row-you-bg)' : 'transparent',
+              borderLeft: `3px solid ${isMe ? 'var(--row-you-bar)' : 'transparent'}`,
               alignItems: 'center',
               fontSize: 12,
             }}
@@ -285,7 +286,7 @@ function RiderGroupedCard({ rows }: { rows: BoardGcByRiderRow[] }) {
                           padding: '2px 6px',
                           borderRadius: 999,
                           background: 'var(--surface-alt)',
-                          color: name === 'You' ? 'var(--accent)' : 'var(--ink-soft)',
+                          color: name === 'You' ? 'var(--accent-text)' : 'var(--ink-soft)',
                           fontWeight: name === 'You' ? 700 : 500,
                         }}
                       >

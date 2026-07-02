@@ -3,8 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { Card } from '@/components/design/card'
 import { Logo } from '@/components/design/logo'
 import OnboardingForm from './form'
+import { editionLabel } from '@/lib/theme/edition-label'
+import { getActiveEditionForTheme } from '@/lib/theme/active-edition-theme'
 
 export default async function OnboardingPage() {
+  const editionLabelText = editionLabel(await getActiveEditionForTheme())
   const supabase = await createClient()
   const {
     data: { user },
@@ -79,7 +82,7 @@ export default async function OnboardingPage() {
                 marginTop: 4,
               }}
             >
-              GIRO · MMXXVI
+              {editionLabelText}
             </span>
           </div>
         </div>

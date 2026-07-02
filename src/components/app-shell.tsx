@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/design/logo';
 import { LiveDot } from '@/components/design/live-dot';
 import { untilText } from '@/components/design/time';
+import { useEditionLabel } from '@/lib/theme/edition-theme-context';
 
 const TABS: Array<{ href: string; label: string; icon: 'home' | 'picks' | 'board' | 'me' }> = [
   { href: '/home',  label: 'Home',  icon: 'home' },
@@ -29,6 +30,7 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
   nextStageIso?: string;
 }) {
   const pathname = usePathname();
+  const editionLabelText = useEditionLabel();
   const [isWide, setIsWide] = useState(false);
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
             <Logo />
             <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20, letterSpacing: -0.3 }}>Quiniela</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: 1, marginTop: 3 }}>GIRO · MMXXVI</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: 1, marginTop: 3 }}>{editionLabelText}</span>
             </span>
           </Link>
           {nextStageLabel && nextStageIso && (
@@ -78,11 +80,11 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
                   <Link key={t.href} href={t.href} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     background: active ? 'var(--accent-soft)' : 'transparent',
-                    color: active ? 'var(--accent)' : 'var(--ink)',
+                    color: active ? 'var(--accent-text)' : 'var(--ink)',
                     padding: '10px 12px', borderRadius: 'var(--radius)',
                     fontSize: 14, fontWeight: 600, textDecoration: 'none',
                   }}>
-                    <NavIcon name={t.icon} color={active ? 'var(--accent)' : 'var(--ink-soft)'} size={18} />
+                    <NavIcon name={t.icon} color={active ? 'var(--accent-text)' : 'var(--ink-soft)'} size={18} />
                     {t.label}
                   </Link>
                 );
@@ -107,10 +109,10 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
             return (
               <Link key={t.href} href={t.href} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '8px 0', color: active ? 'var(--accent)' : 'var(--ink-soft)',
+                padding: '8px 0', color: active ? 'var(--accent-text)' : 'var(--ink-soft)',
                 textDecoration: 'none',
               }}>
-                <NavIcon name={t.icon} color={active ? 'var(--accent)' : 'var(--ink-soft)'} />
+                <NavIcon name={t.icon} color={active ? 'var(--accent-text)' : 'var(--ink-soft)'} />
                 <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase' }}>{t.label}</span>
               </Link>
             );

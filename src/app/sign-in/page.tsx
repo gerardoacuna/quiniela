@@ -5,10 +5,12 @@ import { createClient } from '@/lib/supabase/client';
 import { Card } from '@/components/design/card';
 import { DsButton } from '@/components/design/button';
 import { Logo } from '@/components/design/logo';
+import { useEditionLabel } from '@/lib/theme/edition-theme-context';
 
 type Status = 'idle' | 'sending' | 'sent' | 'error';
 
 export default function SignInPage() {
+  const editionLabelText = useEditionLabel();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -90,7 +92,7 @@ export default function SignInPage() {
                 marginTop: 4,
               }}
             >
-              GIRO · MMXXVI
+              {editionLabelText}
             </span>
           </div>
         </div>

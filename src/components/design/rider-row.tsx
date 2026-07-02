@@ -59,7 +59,7 @@ export function RiderRow({
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{team.name}</span>
         </div>
         {hint && (
-          <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 1 }}>{hint}</div>
+          <div style={{ fontSize: 11, color: 'var(--accent-text)', fontWeight: 600, marginTop: 1 }}>{hint}</div>
         )}
       </div>
       {right}

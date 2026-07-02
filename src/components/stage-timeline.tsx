@@ -27,7 +27,7 @@ function TimelineCell({ stage, isCurrent }: { stage: TimelineStage; isCurrent: b
     : `/picks/stage/${stage.number}`;
 
   const borderColor = isCurrent ? 'var(--accent)' : 'var(--hair)';
-  const numColor = isCurrent ? 'var(--accent)' : isLocked ? 'var(--ink-mute)' : 'var(--ink-soft)';
+  const numColor = isCurrent ? 'var(--accent-text)' : isLocked ? 'var(--ink-mute)' : 'var(--ink-soft)';
   const bgColor = isLocked ? 'var(--surface-alt)' : 'var(--surface)';
 
   return (
@@ -55,7 +55,7 @@ function TimelineCell({ stage, isCurrent }: { stage: TimelineStage; isCurrent: b
           ST {String(stage.number).padStart(2, '0')}
         </span>
         {stage.double_points && (
-          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--accent)' }}>2×</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--accent-text)' }}>2×</span>
         )}
       </div>
       <div style={{
@@ -83,7 +83,7 @@ function TimelineCell({ stage, isCurrent }: { stage: TimelineStage; isCurrent: b
             fontFamily: 'var(--font-mono)',
             fontSize: 12,
             fontWeight: 600,
-            color: (stage.points ?? 0) > 0 ? 'var(--accent)' : 'var(--ink-mute)',
+            color: (stage.points ?? 0) > 0 ? 'var(--accent-text)' : 'var(--ink-mute)',
           }}>
             {stage.points != null ? `+${stage.points}` : '—'}
           </span>
@@ -138,7 +138,7 @@ export function StageTimeline({
         <Link href="/picks" style={{
           background: 'none',
           border: 'none',
-          color: 'var(--accent)',
+          color: 'var(--accent-text)',
           fontSize: 12,
           fontWeight: 600,
           cursor: 'pointer',

@@ -3,7 +3,7 @@ export function BibTile({ num, size = 36 }: { num: number | null | undefined; si
     <div
       style={{
         width: size, height: size * 1.2, borderRadius: 'var(--radius)',
-        background: '#fff', color: '#1a1714',
+        background: 'var(--bib-bg)', color: 'var(--bib-ink)',
         border: '1px solid var(--hair)',
         display: 'grid', placeItems: 'center',
         fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: size * 0.42,

@@ -4,7 +4,7 @@ export function JerseyGlyph({
   size = 22,
   kind = 'points',
 }: { size?: number; kind?: JerseyKind }) {
-  const background = kind === 'white' ? 'var(--jersey-white)' : 'var(--jersey-pink)';
+  const background = kind === 'white' ? 'var(--jersey-youth)' : 'var(--jersey-points)';
   const innerBorder = kind === 'white' ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.5)';
   return (
     <div

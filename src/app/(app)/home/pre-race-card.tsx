@@ -43,7 +43,7 @@ function JerseyRow({ kind, label, pick }: { kind: 'points' | 'white'; label: str
       {!pick ? (
         <Link href={`/picks/jerseys/${kind}`} style={{
           fontSize: 12,
-          color: 'var(--accent)',
+          color: 'var(--accent-text)',
           textDecoration: 'underline',
           border: '1px dashed var(--hair)',
           padding: '6px 8px',
@@ -107,7 +107,7 @@ export function PreRaceCard({
             <div style={{ marginTop: 8 }}>
               <Link href="/picks/gc" style={{
                 fontSize: 12,
-                color: 'var(--accent)',
+                color: 'var(--accent-text)',
                 textDecoration: 'underline',
                 border: '1px dashed var(--hair)',
                 padding: '6px 8px',
@@ -126,7 +126,7 @@ export function PreRaceCard({
                   <span style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 11,
-                    color: 'var(--accent)',
+                    color: 'var(--accent-text)',
                     fontWeight: 700,
                     width: 20,
                     flexShrink: 0,

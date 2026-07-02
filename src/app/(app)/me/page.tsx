@@ -135,7 +135,7 @@ export default async function MePage() {
                       fontFamily: 'var(--font-mono)',
                       fontSize: 9,
                       letterSpacing: 1,
-                      color: s.kind === 'underdog' ? 'var(--accent)' : 'var(--ink-mute)',
+                      color: s.kind === 'underdog' ? 'var(--accent-text)' : 'var(--ink-mute)',
                       width: 14,
                       flexShrink: 0,
                       fontWeight: 700,
@@ -155,7 +155,7 @@ export default async function MePage() {
                   fontFamily: 'var(--font-mono)',
                   fontSize: 14,
                   fontWeight: 700,
-                  color: s.points > 0 ? 'var(--accent)' : 'var(--ink-mute)',
+                  color: s.points > 0 ? 'var(--accent-text)' : 'var(--ink-mute)',
                   width: 34,
                   textAlign: 'right',
                 }}
@@ -198,7 +198,7 @@ export default async function MePage() {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      color: 'var(--accent)',
+                      color: 'var(--accent-text)',
                       fontWeight: 700,
                       letterSpacing: 1,
                     }}
@@ -226,7 +226,7 @@ export default async function MePage() {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: 10,
-                      color: 'var(--accent)',
+                      color: 'var(--accent-text)',
                       fontWeight: 700,
                       letterSpacing: 1,
                     }}

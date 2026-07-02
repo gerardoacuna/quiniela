@@ -72,7 +72,7 @@ export function WhoPickedWhomCard({ grouped, scored, resultsMap, doublePoints }:
                     fontFamily: 'var(--font-mono)',
                     fontSize: 12,
                     fontWeight: 700,
-                    color: pos != null ? 'var(--accent)' : 'var(--ink-mute)',
+                    color: pos != null ? 'var(--accent-text)' : 'var(--ink-mute)',
                   }}
                 >
                   {pos != null ? `${ordinal(pos)} · +${pts}` : 'out of top 10'}
@@ -89,7 +89,7 @@ export function WhoPickedWhomCard({ grouped, scored, resultsMap, doublePoints }:
                       padding: '2px 6px',
                       borderRadius: 999,
                       background: 'var(--surface-alt)',
-                      color: p.name === 'You' ? 'var(--accent)' : 'var(--ink-soft)',
+                      color: p.name === 'You' ? 'var(--accent-text)' : 'var(--ink-soft)',
                       fontWeight: p.name === 'You' ? 700 : 500,
                       display: 'inline-flex',
                       alignItems: 'center',

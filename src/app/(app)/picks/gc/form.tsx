@@ -161,7 +161,7 @@ export function GcPickForm({
                   fontWeight: 600,
                   fontSize: 28,
                   lineHeight: 1,
-                  color: 'var(--accent)',
+                  color: 'var(--accent-text)',
                 }}
               >
                 {SLOT_LABELS[idx]}

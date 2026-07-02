@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/types/database';
 
@@ -6,7 +7,7 @@ export type StageRow = Database['public']['Tables']['stages']['Row'];
 export type StageResultRow = Database['public']['Tables']['stage_results']['Row'];
 export type EditionRow = Database['public']['Tables']['editions']['Row'];
 
-export async function getActiveEdition(): Promise<EditionRow | null> {
+export const getActiveEdition = cache(async (): Promise<EditionRow | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('editions')
@@ -16,7 +17,7 @@ export async function getActiveEdition(): Promise<EditionRow | null> {
     .maybeSingle();
   if (error) throw error;
   return data;
-}
+});
 
 export async function listCountedStages(editionId: string): Promise<StageRow[]> {
   const supabase = await createClient();
