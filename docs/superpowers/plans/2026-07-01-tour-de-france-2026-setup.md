@@ -13,7 +13,8 @@
 - Tour edition UUID (fixed, referenced everywhere): `11111111-1111-4111-8111-111111111111`.
 - Edition: slug `tour-de-france-2026`, name `Tour de France 2026`, `start_date 2026-07-04`, `end_date 2026-07-26`, inserted **`is_active = false`** (dormant — must not collide with the locally-seeded active Giro under `editions_single_active_idx`).
 - Inserts are **unconditional** (land in both local and prod) and **idempotent** (`on conflict … do update`); re-running must never flip `is_active`.
-- `stages.terrain` enum is `flat|hilly|mountain|itt` (no `ttt`); Stage 1 TTT and Stage 16 ITT both map to `itt`. `stages.km` is an integer (0–400) — decimal km round to nearest int. All stages `counts_for_scoring = true`, `double_points = false`.
+- `stages.terrain` enum is `flat|hilly|mountain|itt` (no `ttt`); Stage 1 TTT and Stage 16 ITT both map to `itt`. `stages.km` is an integer (0–400) — decimal km round to nearest int.
+- Per-stage flags come from the operator lists (not blanket defaults): `counts_for_scoring = true` for stages **{3, 6, 7, 9, 10, 11, 13, 14, 15, 16, 18, 19, 20}** (13 stages), `false` otherwise; `double_points = true` for stages **{9, 13, 15, 18, 19, 20}** (6 stages, all within the counting set), `false` otherwise.
 - `riders.pcs_slug` is `NOT NULL` + unique per edition; startlist is upserted on `(edition_id, pcs_slug)`. 184 riders, exactly 23 flagged `is_top_tier = true`.
 - Bibs follow the Tour block convention: team *k* (1–23 in startlist order) → bibs `(k-1)*10+1 … +8` (UAE 1–8 … Pinarello 221–228).
 - No scraping / no PCS ingestion; no admin UI; no app-code changes. Activation is a manual ops step, **not** an auto-applied migration.
@@ -51,29 +52,30 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const ED = '11111111-1111-4111-8111-111111111111';
 const esc = (s) => s.replace(/'/g, "''");
 
-// [number, start_time (UTC), terrain, km(decimal)] — official ASO route + iCal start times.
+// [number, start_time (UTC), terrain, km(decimal), counts_for_scoring, double_points]
+// Official ASO route + iCal start times; flags from the operator lists.
 const STAGES = [
-  [1, '2026-07-04 15:05:00+00', 'itt', 19.6],
-  [2, '2026-07-05 11:55:00+00', 'hilly', 168.5],
-  [3, '2026-07-06 10:20:00+00', 'mountain', 195.9],
-  [4, '2026-07-07 11:25:00+00', 'hilly', 181.9],
-  [5, '2026-07-08 12:15:00+00', 'flat', 158.3],
-  [6, '2026-07-09 10:40:00+00', 'mountain', 186.2],
-  [7, '2026-07-10 11:25:00+00', 'flat', 175.1],
-  [8, '2026-07-11 11:25:00+00', 'flat', 180.4],
-  [9, '2026-07-12 11:45:00+00', 'hilly', 185.5],
-  [10, '2026-07-14 11:25:00+00', 'mountain', 166.6],
-  [11, '2026-07-15 12:05:00+00', 'flat', 161.3],
-  [12, '2026-07-16 12:40:00+00', 'flat', 179.1],
-  [13, '2026-07-17 11:20:00+00', 'hilly', 205.8],
-  [14, '2026-07-18 11:30:00+00', 'mountain', 155.3],
-  [15, '2026-07-19 11:20:00+00', 'mountain', 183.9],
-  [16, '2026-07-21 11:00:00+00', 'itt', 26.1],
-  [17, '2026-07-22 11:35:00+00', 'flat', 174.7],
-  [18, '2026-07-23 10:50:00+00', 'mountain', 185.2],
-  [19, '2026-07-24 12:15:00+00', 'mountain', 127.9],
-  [20, '2026-07-25 09:30:00+00', 'mountain', 170.9],
-  [21, '2026-07-26 14:25:00+00', 'flat', 133.0],
+  [1, '2026-07-04 15:05:00+00', 'itt', 19.6, false, false],
+  [2, '2026-07-05 11:55:00+00', 'hilly', 168.5, false, false],
+  [3, '2026-07-06 10:20:00+00', 'mountain', 195.9, true, false],
+  [4, '2026-07-07 11:25:00+00', 'hilly', 181.9, false, false],
+  [5, '2026-07-08 12:15:00+00', 'flat', 158.3, false, false],
+  [6, '2026-07-09 10:40:00+00', 'mountain', 186.2, true, false],
+  [7, '2026-07-10 11:25:00+00', 'flat', 175.1, true, false],
+  [8, '2026-07-11 11:25:00+00', 'flat', 180.4, false, false],
+  [9, '2026-07-12 11:45:00+00', 'hilly', 185.5, true, true],
+  [10, '2026-07-14 11:25:00+00', 'mountain', 166.6, true, false],
+  [11, '2026-07-15 12:05:00+00', 'flat', 161.3, true, false],
+  [12, '2026-07-16 12:40:00+00', 'flat', 179.1, false, false],
+  [13, '2026-07-17 11:20:00+00', 'hilly', 205.8, true, true],
+  [14, '2026-07-18 11:30:00+00', 'mountain', 155.3, true, false],
+  [15, '2026-07-19 11:20:00+00', 'mountain', 183.9, true, true],
+  [16, '2026-07-21 11:00:00+00', 'itt', 26.1, true, false],
+  [17, '2026-07-22 11:35:00+00', 'flat', 174.7, false, false],
+  [18, '2026-07-23 10:50:00+00', 'mountain', 185.2, true, true],
+  [19, '2026-07-24 12:15:00+00', 'mountain', 127.9, true, true],
+  [20, '2026-07-25 09:30:00+00', 'mountain', 170.9, true, true],
+  [21, '2026-07-26 14:25:00+00', 'flat', 133.0, false, false],
 ];
 
 const editionStagesSql = `-- Tour de France 2026: edition (dormant) + 21 stages. Generated; idempotent.
@@ -86,7 +88,7 @@ on conflict (id) do update
 -- flips activation. Activation is a separate ops step at go-live.
 
 insert into public.stages (edition_id, number, start_time, counts_for_scoring, double_points, terrain, km) values
-${STAGES.map(([n, t, ter, km]) => `  ('${ED}', ${n}, '${t}', true, false, '${ter}', ${Math.round(km)})`).join(',\n')}
+${STAGES.map(([n, t, ter, km, counts, dbl]) => `  ('${ED}', ${n}, '${t}', ${counts}, ${dbl}, '${ter}', ${Math.round(km)})`).join(',\n')}
 on conflict (edition_id, number) do update
   set start_time = excluded.start_time, counts_for_scoring = excluded.counts_for_scoring,
       double_points = excluded.double_points, terrain = excluded.terrain, km = excluded.km;
@@ -128,6 +130,8 @@ Expected: exit 0, "Finished supabase db reset".
 
 Then verify with psql against the local DB (get URL from `npx supabase status`), or add the assertions in Task 3's test. Expected rows:
 - `select count(*) from stages where edition_id='11111111-1111-4111-8111-111111111111';` → `21`
+- `select count(*) from stages where edition_id='11111111-1111-4111-8111-111111111111' and counts_for_scoring;` → `13`
+- `select count(*) from stages where edition_id='11111111-1111-4111-8111-111111111111' and double_points;` → `6`
 - `select count(*) from riders where edition_id='11111111-1111-4111-8111-111111111111';` → `184`
 - `select count(*) from riders where edition_id='11111111-1111-4111-8111-111111111111' and is_top_tier;` → `23`
 - `select is_active from editions where slug='tour-de-france-2026';` → `f` (dormant)
@@ -217,7 +221,7 @@ Run: `git diff --name-only main..HEAD` and confirm only migration/spec/plan/data
 
 **Spec coverage:**
 - Edition (dormant, fixed UUID, dates/slug/name) → Task 1 ✓
-- 21 stages (official terrain, iCal UTC start times, km, counts=true, double=false) → Task 1 generator `STAGES` ✓
+- 21 stages (official terrain, iCal UTC start times, km, per-stage counts_for_scoring {13 stages} + double_points {6 stages} from operator lists) → Task 1 generator `STAGES` + verified in Task 1 Step 5 ✓
 - 184-rider startlist upsert, slugs, bibs by convention, 23 top-tier → Task 1 (JSON + generator) ✓
 - Unconditional + idempotent; re-run never flips `is_active` → `on conflict` clauses; `is_active` excluded from edition update set ✓
 - Activation as separate manual go-live step, single-transaction, single-active-safe → Task 2 ✓
