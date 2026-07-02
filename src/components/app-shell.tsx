@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/design/logo';
 import { LiveDot } from '@/components/design/live-dot';
 import { untilText } from '@/components/design/time';
+import { useEditionLabel } from '@/lib/theme/edition-theme-context';
 
 const TABS: Array<{ href: string; label: string; icon: 'home' | 'picks' | 'board' | 'me' }> = [
   { href: '/home',  label: 'Home',  icon: 'home' },
@@ -29,6 +30,7 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
   nextStageIso?: string;
 }) {
   const pathname = usePathname();
+  const editionLabelText = useEditionLabel();
   const [isWide, setIsWide] = useState(false);
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export function AppShell({ children, nextStageLabel, nextStageIso }: {
             <Logo />
             <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 20, letterSpacing: -0.3 }}>Quiniela</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: 1, marginTop: 3 }}>GIRO · MMXXVI</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: 1, marginTop: 3 }}>{editionLabelText}</span>
             </span>
           </Link>
           {nextStageLabel && nextStageIso && (
