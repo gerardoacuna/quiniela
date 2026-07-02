@@ -63,8 +63,13 @@
   --ok: #3ee9a7;
   --warn: #ffb454;
   --danger: #ff4d6d;
-  --jersey-pink: #9b1d4b;
-  --jersey-white: #f4f2ef;
+  --jersey-points: #9b1d4b;
+  --jersey-youth: #f4f2ef;
+  --bib-bg: #ffffff;
+  --bib-ink: #1a1714;
+  --accent-text: var(--accent);
+  --row-you-bg: var(--accent-soft);
+  --row-you-bar: var(--accent-soft);
   --radius: 2px;
   --display-weight: 600;
   --display-italic: normal;
@@ -106,6 +111,30 @@
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--hair);
   --sidebar-ring: var(--accent);
+}
+
+[data-theme="tour"] {
+  --bg: #fbfbfb;
+  --surface: #ffffff;
+  --surface-alt: #f2f2f2;
+  --ink: #18181a;
+  --ink-soft: #5c5c5c;
+  --ink-mute: #8e8e8e;
+  --hair: #e8e8e8;
+  --accent: #ffff00;
+  --accent-ink: #1a1700;
+  --accent-soft: #fff6bf;
+  --ok: #0f9d58;
+  --warn: #b45309;
+  --danger: #dc2626;
+  --jersey-points: #15803d;
+  --jersey-youth: #ffffff;
+  --bib-bg: #1a1a1a;
+  --bib-ink: #ffffff;
+  --accent-text: var(--ink);   /* #ff0 is fill-only; text-accents are ink/black */
+  --row-you-bg: var(--surface); /* white row, highlight is the bar only */
+  --row-you-bar: var(--accent); /* solid #ff0 left bar */
+  --chart-5: #ffff00;
 }
 
 @media (min-width: 880px) {
