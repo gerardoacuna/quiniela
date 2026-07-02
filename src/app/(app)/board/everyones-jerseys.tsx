@@ -153,7 +153,8 @@ function PlayerGroupedCard({
               gap: 10,
               padding: '10px 14px',
               borderBottom: '1px solid var(--hair)',
-              background: isMe ? 'var(--accent-soft)' : 'transparent',
+              background: isMe ? 'var(--row-you-bg)' : 'transparent',
+              borderLeft: `3px solid ${isMe ? 'var(--row-you-bar)' : 'transparent'}`,
               alignItems: 'center',
               fontSize: 12,
             }}

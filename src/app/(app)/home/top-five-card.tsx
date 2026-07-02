@@ -11,13 +11,14 @@ function BoardMiniRow({ row, isMe }: { row: RankedLeaderboardRow; isMe: boolean 
       alignItems: 'center',
       padding: '10px 16px',
       borderTop: '1px solid var(--hair)',
-      background: isMe ? 'var(--accent-soft)' : 'transparent',
+      background: isMe ? 'var(--row-you-bg)' : 'transparent',
+      borderLeft: `3px solid ${isMe ? 'var(--row-you-bar)' : 'transparent'}`,
     }}>
       <span style={{
         fontFamily: 'var(--font-mono)',
         fontWeight: 600,
         fontSize: 13,
-        color: isMe ? 'var(--accent)' : 'var(--ink-soft)',
+        color: isMe ? 'var(--accent-text)' : 'var(--ink-soft)',
       }}>
         {row.rank}
       </span>

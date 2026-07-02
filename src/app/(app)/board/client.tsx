@@ -80,7 +80,8 @@ export function BoardClient({ rows, currentUserId }: BoardClientProps) {
                   padding: "10px 14px",
                   alignItems: "center",
                   borderBottom: "1px solid var(--hair)",
-                  background: isMe ? "var(--accent-soft)" : "transparent",
+                  background: isMe ? "var(--row-you-bg)" : "transparent",
+                  borderLeft: `3px solid ${isMe ? "var(--row-you-bar)" : "transparent"}`,
                 }}
               >
                 <span
@@ -88,7 +89,7 @@ export function BoardClient({ rows, currentUserId }: BoardClientProps) {
                     fontFamily: "var(--font-mono)",
                     fontWeight: 700,
                     fontSize: 13,
-                    color: isMe ? "var(--accent)" : "var(--ink-soft)",
+                    color: isMe ? "var(--accent-text)" : "var(--ink-soft)",
                   }}
                 >
                   {r.rank}
