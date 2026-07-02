@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { getActiveEdition } from "@/lib/queries/stages";
 import { themeForSlug } from "@/lib/theme/theme-for-slug";
 import { editionLabel } from "@/lib/theme/edition-label";
 import { EditionThemeProvider } from "@/lib/theme/edition-theme-context";
+import { getActiveEditionForTheme } from "@/lib/theme/active-edition-theme";
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", display: "swap", weight: ["400", "500", "600", "700"] });
 const interTight = Inter_Tight({ subsets: ["latin"], variable: "--font-body", display: "swap", weight: ["400", "500", "600", "700"] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap", weight: ["400", "500", "600", "700"] });
 
 async function resolveEdition() {
-  try { return await getActiveEdition(); } catch { return null; }
+  return getActiveEditionForTheme();
 }
 
 export async function generateMetadata(): Promise<Metadata> {
