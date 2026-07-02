@@ -143,7 +143,7 @@ export function GcPickForm({
               aria-label={`Edit ${SLOT_LABELS[idx]} place pick`}
               style={{
                 background: 'var(--surface)',
-                border: `1px solid ${isEditing ? 'var(--accent)' : 'var(--hair)'}`,
+                border: `1px solid ${isEditing ? 'var(--accent-border)' : 'var(--hair)'}`,
                 borderRadius: 'var(--radius)',
                 padding: 12,
                 cursor: isLocked ? 'default' : 'pointer',

@@ -62,7 +62,7 @@ export function HeroPreRace({
           href="/picks"
           style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            background: 'var(--accent)', color: 'var(--accent-ink)', border: '1px solid var(--accent)',
+            background: 'var(--accent)', color: 'var(--accent-ink)', border: '1px solid var(--accent-border)',
             padding: '11px 16px', borderRadius: 'var(--radius)', fontWeight: 600, fontSize: 14,
             fontFamily: 'var(--font-body)', minHeight: 42, flex: 1, textDecoration: 'none',
           }}

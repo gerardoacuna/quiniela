@@ -171,7 +171,7 @@ export default function SignInPage() {
                   placeholder="you@example.com"
                   style={{
                     background: 'var(--surface-alt)',
-                    border: `1px solid ${emailFocused ? 'var(--accent)' : 'var(--hair)'}`,
+                    border: `1px solid ${emailFocused ? 'var(--accent-border)' : 'var(--hair)'}`,
                     color: 'var(--ink)',
                     borderRadius: 'var(--radius)',
                     padding: '10px 12px',

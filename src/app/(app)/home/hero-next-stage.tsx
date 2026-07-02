@@ -143,7 +143,7 @@ export function HeroNextStage({
             gap: 8,
             background: 'var(--accent)',
             color: 'var(--accent-ink)',
-            border: '1px solid var(--accent)',
+            border: '1px solid var(--accent-border)',
             padding: '11px 16px',
             borderRadius: 'var(--radius)',
             fontWeight: 600,
@@ -226,7 +226,7 @@ function HeroPickRow({ kind, rider }: { kind: 'primary' | 'underdog'; rider: Her
       <div style={{
         width: 34,
         height: 40,
-        border: '1.5px dashed var(--accent)',
+        border: '1.5px dashed var(--accent-border)',
         borderRadius: 2,
         display: 'grid',
         placeItems: 'center',

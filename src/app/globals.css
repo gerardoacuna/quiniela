@@ -68,6 +68,7 @@
   --bib-bg: #ffffff;
   --bib-ink: #1a1714;
   --accent-text: var(--accent);
+  --accent-border: var(--accent);
   --row-you-bg: var(--accent-soft);
   --row-you-bar: var(--accent-soft);
   --radius: 2px;
@@ -132,6 +133,7 @@
   --bib-bg: #1a1a1a;
   --bib-ink: #ffffff;
   --accent-text: var(--ink);   /* #ff0 is fill-only; text-accents are ink/black */
+  --accent-border: var(--ink); /* #ff0 borders are garish on light bg; use ink/black */
   --row-you-bg: var(--surface); /* white row, highlight is the bar only */
   --row-you-bar: var(--accent); /* solid #ff0 left bar */
   --chart-5: #ffff00;
