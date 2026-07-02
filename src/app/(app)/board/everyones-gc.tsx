@@ -286,7 +286,7 @@ function RiderGroupedCard({ rows }: { rows: BoardGcByRiderRow[] }) {
                           padding: '2px 6px',
                           borderRadius: 999,
                           background: 'var(--surface-alt)',
-                          color: name === 'You' ? 'var(--accent)' : 'var(--ink-soft)',
+                          color: name === 'You' ? 'var(--accent-text)' : 'var(--ink-soft)',
                           fontWeight: name === 'You' ? 700 : 500,
                         }}
                       >

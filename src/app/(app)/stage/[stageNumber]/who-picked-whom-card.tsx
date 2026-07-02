@@ -89,7 +89,7 @@ export function WhoPickedWhomCard({ grouped, scored, resultsMap, doublePoints }:
                       padding: '2px 6px',
                       borderRadius: 999,
                       background: 'var(--surface-alt)',
-                      color: p.name === 'You' ? 'var(--accent)' : 'var(--ink-soft)',
+                      color: p.name === 'You' ? 'var(--accent-text)' : 'var(--ink-soft)',
                       fontWeight: p.name === 'You' ? 700 : 500,
                       display: 'inline-flex',
                       alignItems: 'center',
