@@ -94,8 +94,7 @@ export function StandingCard({
           color: 'var(--accent-text)',
           fontWeight: 700,
           padding: '4px 8px',
-          background: 'var(--row-you-bg)',
-          borderLeft: '3px solid var(--row-you-bar)',
+          background: 'var(--accent-soft)',
           borderRadius: 4,
           whiteSpace: 'nowrap',
         }}>

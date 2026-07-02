@@ -27,7 +27,7 @@ function TimelineCell({ stage, isCurrent }: { stage: TimelineStage; isCurrent: b
     : `/picks/stage/${stage.number}`;
 
   const borderColor = isCurrent ? 'var(--accent)' : 'var(--hair)';
-  const numColor = isCurrent ? 'var(--accent)' : isLocked ? 'var(--ink-mute)' : 'var(--ink-soft)';
+  const numColor = isCurrent ? 'var(--accent-text)' : isLocked ? 'var(--ink-mute)' : 'var(--ink-soft)';
   const bgColor = isLocked ? 'var(--surface-alt)' : 'var(--surface)';
 
   return (
